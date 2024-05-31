@@ -245,7 +245,7 @@ def set_html(app):
                                                     className="gantt-div",
                                                     children=[
                                                         html.H3(
-                                                            "Classical Solver (COIN-OR Branch-and-Cut)",
+                                                            "HiGHS Classical Solver",
                                                             className="gantt-title",
                                                         ),
                                                         dcc.Graph(
