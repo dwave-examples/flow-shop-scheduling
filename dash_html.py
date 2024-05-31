@@ -38,6 +38,7 @@ from app_configs import (
     CLASSICAL_TAB_LABEL,
     DESCRIPTION,
     DWAVE_TAB_LABEL,
+    SHOW_CQM,
     MAIN_HEADER,
     SCENARIOS,
     SOLVER_TIME,
@@ -45,7 +46,7 @@ from app_configs import (
 )
 
 MODEL_OPTIONS = ["Mixed Integer Model", "Mixed Integer Quadratic Model"]
-SOLVER_OPTIONS = ["D-Wave Hybrid Solver", "Classical Solver (COIN-OR Branch-and-Cut)"]
+SOLVER_OPTIONS = ["CQM Solver", "NL Solver", "Classical Solver (COIN-OR Branch-and-Cut)"]
 
 
 def description_card():
@@ -107,7 +108,8 @@ def generate_control_card() -> html.Div:
             dcc.Checklist(
                 id="solver-select",
                 options=solver_options,
-                value=[solver_options[0]["value"]],
+                value=[solver_options[2]["value"]],
+                className="" if SHOW_CQM else "hide-cqm",
             ),
             html.Label("Solver Time Limit (seconds)"),
             dcc.Input(

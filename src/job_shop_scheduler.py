@@ -1,5 +1,5 @@
 """
-This module contains the JobShopSchedulingCQM class, which is used to build and 
+This module contains the JobShopSchedulingCQM class, which is used to build and
 solve a Job Shop Scheduling problem using CQM.
 
 """
@@ -15,11 +15,15 @@ from dwave.system import LeapHybridCQMSampler
 from tabulate import tabulate
 
 sys.path.append("./src")
+from app_configs import RESOURCE_NAMES
 import utils.mip_solver as mip_solver
 import utils.plot_schedule as job_plotter
 from model_data import JobShopData
 from utils.greedy import GreedyJobShop
 from utils.utils import print_cqm_stats, write_solution_to_file
+
+from nlsolver import HSSNLSolver
+from dwave.optimization.generators import flow_shop_scheduling
 
 
 def generate_greedy_makespan(job_data: JobShopData, num_samples: int = 100) -> int:
@@ -44,7 +48,7 @@ def generate_greedy_makespan(job_data: JobShopData, num_samples: int = 100) -> i
     return best_greedy
 
 
-class JobShopSchedulingCQM:
+class JobShopSchedulingModel:
     """Builds and solves a Job Shop Scheduling problem using CQM.
 
     Args:
@@ -277,6 +281,27 @@ class JobShopSchedulingCQM:
 
         self.completion_time = self.best_sample["makespan"]
 
+    def call_nl_solver(self, time_limit: int, model_data: JobShopData) -> None:
+        """Calls NL solver.
+
+        Args:
+            time_limit (int): time limit in second
+            model_data (JobShopData): a JobShopData data class
+
+        Modifies:
+            self.solution: the solution to the problem
+        """
+        model, end_times = flow_shop_scheduling(processing_times=model_data.processing_times)
+        _ = HSSNLSolver().solve(model, time_limit=time_limit)
+
+        end_times = [[float(i.state()) for i in j ] for j in end_times]
+        for machine_idx, machine_times in enumerate(end_times):
+            for job_idx, end_time in enumerate(machine_times):
+                job = int(next(model.iter_decisions()).state()[job_idx])
+
+                task = self.model_data.get_resource_job_tasks(job=str(job), resource=RESOURCE_NAMES[machine_idx])
+                self.solution[(str(job), RESOURCE_NAMES[machine_idx])] = task, end_time - task.duration, task.duration
+
     def call_mip_solver(self, time_limit: int = 100):
         """This function calls the MIP solver and returns the solution
 
@@ -319,6 +344,7 @@ def run_shop_scheduler(
     job_data: JobShopData,
     solver_time_limit: int = 60,
     use_mip_solver: bool = False,
+    use_nl_solver: bool = False,
     verbose: bool = False,
     allow_quadratic_constraints: bool = True,
     out_sol_file: str = None,
@@ -354,13 +380,15 @@ def run_shop_scheduler(
     """
     if allow_quadratic_constraints and use_mip_solver:
         raise ValueError("Cannot use quadratic constraints with MIP solver")
+
     model_building_start = time()
-    model = JobShopSchedulingCQM(
+    model = JobShopSchedulingModel(
         model_data=job_data, max_makespan=max_makespan, greedy_multiplier=greedy_multiplier
     )
     model.define_cqm_model()
     model.define_variables(job_data)
     model.add_precedence_constraints(job_data)
+
     if allow_quadratic_constraints:
         model.add_quadratic_overlap_constraint(job_data)
     else:
@@ -372,11 +400,13 @@ def run_shop_scheduler(
         print_cqm_stats(model.cqm)
     model_building_time = time() - model_building_start
     solver_start_time = time()
+
     if use_mip_solver:
-        sol = model.call_mip_solver(time_limit=solver_time_limit)
+        model.call_mip_solver(time_limit=solver_time_limit)
+    elif use_nl_solver:
+        model.call_nl_solver(time_limit=solver_time_limit, model_data=job_data)
     else:
         model.call_cqm_solver(time_limit=solver_time_limit, model_data=job_data, profile=profile)
-        sol = model.best_sample
     solver_time = time() - solver_start_time
 
     if verbose:

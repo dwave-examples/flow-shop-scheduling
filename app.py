@@ -91,8 +91,9 @@ class Model(Enum):
 
 
 class SamplerType(Enum):
-    HYBRID = 0
-    MIP = 1
+    CQM = 0
+    NL = 1
+    MIP = 2
 
 
 @app.callback(
@@ -130,7 +131,7 @@ def toggle_left_column(left_column_collapse: int, class_name: str) -> str:
 def update_solver_options(
     model: int, selected_solvers: list[int], last_selected_solvers: list[int]
 ) -> tuple[str, list[int], list[int]]:
-    """Hides and shows classical solver option using 'hide-classic' class
+    """Hides and shows classical solver option using 'hide-classic-and-nl' class
 
     Args:
         model_value (int): Currently selected model from model-select dropdown.
@@ -145,8 +146,55 @@ def update_solver_options(
     model = Model(model)
 
     if model is Model.QM:
-        return "hide-classic", [SamplerType.HYBRID.value], selected_solvers
+        return "hide-classic-and-nl", [SamplerType.CQM.value], selected_solvers
     return "", last_selected_solvers, dash.no_update
+
+@app.callback(
+    Output("solver-select", "options"),
+    inputs=[
+        Input("solver-select", "value"),
+        Input("model-select", "value"),
+        State("solver-select", "options"),
+    ],
+    prevent_initial_call=True,
+)
+def update_solvers_selected(
+    selected_solvers: list[int],
+    model: int,
+    solver_options: list[dict]
+) -> list[dict]:
+    """Disable NL/CQM solver checkboxes when the other one is selected.
+
+    Note, can be removed if CQM solver is not in use.
+
+    Args:
+        selected_solvers (list[int]): Currently selected solvers.
+        model_value (int): Currently selected model from model-select dropdown.
+        list: List of solver checkbox options.
+
+    Returns:
+        list: Updated list of solver checkbox options.
+    """
+    model = Model(model)
+
+    if model is model.MIP:
+        if SamplerType.CQM.value in selected_solvers:
+            # make sure that correct label is disabled
+            assert solver_options[1]["label"] == "NL Solver"
+
+            solver_options[1]["disabled"] = True
+            return solver_options
+
+        elif SamplerType.NL.value in selected_solvers:
+            # make sure that correct label is disabled
+            assert solver_options[0]["label"] == "CQM Solver"
+
+            solver_options[0]["disabled"] = True
+            return solver_options
+
+    solver_options[0]["disabled"] = False
+    solver_options[1]["disabled"] = False
+    return solver_options
 
 
 @app.callback(
@@ -193,7 +241,7 @@ def update_tab_loading_state(
     """
 
     if ctx.triggered_id == "run-button" and run_click > 0:
-        run_hybrid = SamplerType.HYBRID.value in solvers
+        run_hybrid = SamplerType.CQM.value in solvers or SamplerType.NL.value in solvers
         run_mip = SamplerType.MIP.value in solvers
 
         return (
@@ -294,7 +342,7 @@ def run_optimization_cqm(
     if ctx.triggered_id != "run-button" or run_click == 0:
         raise PreventUpdate
 
-    if SamplerType.HYBRID.value not in solvers:
+    if SamplerType.CQM.value not in solvers and SamplerType.NL.value not in solvers:
         return (dash.no_update, dash.no_update, "tab", DWAVE_TAB_LABEL, dash.no_update, False)
 
     start = time.perf_counter()
@@ -307,6 +355,7 @@ def run_optimization_cqm(
     results = run_shop_scheduler(
         model_data,
         use_mip_solver=False,
+        use_nl_solver=True if SamplerType.NL.value in solvers else False,
         allow_quadratic_constraints=(model is Model.QM),
         solver_time_limit=time_limit,
     )

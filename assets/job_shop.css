@@ -1,4 +1,4 @@
-/* 
+/*
 This file is forked from apps/dash-clinical-analytics/assets/clinical-analytics.css under the following license
 
 MIT License
@@ -127,7 +127,11 @@ label {
     display: flex;
 }
 
-#solver-select.hide-classic label:last-child {
+#solver-select.hide-classic-and-nl label:nth-last-child(-n+2) {
+    display: none !important;
+}
+
+#solver-select.hide-cqm label:first-child {
     display: none !important;
 }
 
