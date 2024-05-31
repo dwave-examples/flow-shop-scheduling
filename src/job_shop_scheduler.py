@@ -16,7 +16,7 @@ from tabulate import tabulate
 
 sys.path.append("./src")
 from app_configs import RESOURCE_NAMES
-import utils.mip_solver as mip_solver
+import utils.scipy_solver as scipy_solver
 import utils.plot_schedule as job_plotter
 from model_data import JobShopData
 from utils.greedy import GreedyJobShop
@@ -302,21 +302,21 @@ class JobShopSchedulingModel:
                 task = self.model_data.get_resource_job_tasks(job=str(job), resource=RESOURCE_NAMES[machine_idx])
                 self.solution[(str(job), RESOURCE_NAMES[machine_idx])] = task, end_time - task.duration, task.duration
 
-    def call_mip_solver(self, time_limit: int = 100):
-        """This function calls the MIP solver and returns the solution
+    def call_scipy_solver(self, time_limit: int = 100):
+        """This function calls the HiGHS via SciPy and returns the solution
 
         Args:
             time_limit (int, optional): The maximum amount of time to
-            allow the MIP solver to before returning. Defaults to 100.
+            allow the HiGHS solver to before returning. Defaults to 100.
 
         Modifies:
             self.solution: the solution to the problem
         """
-        solver = mip_solver.MIPCQMSolver()
+        solver = scipy_solver.SciPyCQMSolver()
         sol = solver.sample_cqm(cqm=self.cqm, time_limit=time_limit)
         self.solution = {}
         if len(sol) == 0:
-            warnings.warn("Warning: MIP did not find feasible solution")
+            warnings.warn("Warning: HiGHS did not find feasible solution")
             return
         best_sol = sol.first.sample
 
@@ -343,7 +343,7 @@ class JobShopSchedulingModel:
 def run_shop_scheduler(
     job_data: JobShopData,
     solver_time_limit: int = 60,
-    use_mip_solver: bool = False,
+    use_scipy_solver: bool = False,
     use_nl_solver: bool = False,
     verbose: bool = False,
     allow_quadratic_constraints: bool = True,
@@ -360,7 +360,7 @@ def run_shop_scheduler(
             scheduling problem.
         solver_time_limit (int, optional): Upperbound on how long the schedule can be; leave empty to
             auto-calculate an appropriate value. Defaults to None.
-        use_mip_solver (bool, optional): Whether to use the MIP solver instead of the CQM solver.
+        use_scipy_solver (bool, optional): Whether to use the HiGHS via SciPy solver instead of the CQM solver.
             Defaults to False.
         verbose (bool, optional): Whether to print verbose output. Defaults to False.
         allow_quadratic_constraints (bool, optional): Whether to allow quadratic constraints.
@@ -378,8 +378,8 @@ def run_shop_scheduler(
         Resource.
 
     """
-    if allow_quadratic_constraints and use_mip_solver:
-        raise ValueError("Cannot use quadratic constraints with MIP solver")
+    if allow_quadratic_constraints and use_scipy_solver:
+        raise ValueError("Cannot use quadratic constraints with HiGHS solver")
 
     model_building_start = time()
     model = JobShopSchedulingModel(
@@ -401,8 +401,8 @@ def run_shop_scheduler(
     model_building_time = time() - model_building_start
     solver_start_time = time()
 
-    if use_mip_solver:
-        model.call_mip_solver(time_limit=solver_time_limit)
+    if use_scipy_solver:
+        model.call_scipy_solver(time_limit=solver_time_limit)
     elif use_nl_solver:
         model.call_nl_solver(time_limit=solver_time_limit, model_data=job_data)
     else:
@@ -482,9 +482,9 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "-m",
-        "--use_mip_solver",
+        "--use_scipy_solver",
         action="store_true",
-        help="Whether to use the MIP solver instead of the CQM solver",
+        help="Whether to use the HiGHS solver instead of the hybrid solver",
     )
 
     parser.add_argument(
@@ -520,7 +520,7 @@ if __name__ == "__main__":
     allow_quadratic_constraints = args.allow_quad
     max_makespan = args.max_makespan
     profile = args.profile
-    use_mip_solver = args.use_mip_solver
+    use_scipy_solver = args.use_scipy_solver
     verbose = args.verbose
 
     job_data = JobShopData()
@@ -530,7 +530,7 @@ if __name__ == "__main__":
         job_data,
         time_limit,
         verbose=verbose,
-        use_mip_solver=use_mip_solver,
+        use_scipy_solver=use_scipy_solver,
         allow_quadratic_constraints=allow_quadratic_constraints,
         profile=profile,
         max_makespan=max_makespan,

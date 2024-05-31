@@ -45,8 +45,8 @@ from app_configs import (
     THUMBNAIL
 )
 
-MODEL_OPTIONS = ["Mixed Integer Model", "Mixed Integer Quadratic Model"]
-SOLVER_OPTIONS = ["CQM Solver", "NL Solver", "Classical Solver (COIN-OR Branch-and-Cut)"]
+MODEL_OPTIONS = ["Mixed Integer Linear Model", "Mixed Integer Quadratic Model"]
+SOLVER_OPTIONS = ["CQM Solver", "NL Solver", "HiGHS Classical Solver"]
 
 
 def description_card():
@@ -234,14 +234,14 @@ def set_html(app):
                                     ),
                                     dcc.Tab(
                                         label=CLASSICAL_TAB_LABEL,
-                                        id="mip-tab",
+                                        id="highs-tab",
                                         className="tab",
-                                        value="mip-tab",
+                                        value="highs-tab",
                                         disabled=True,
                                         children=[
                                             html.Div(
                                                 html.Div(
-                                                    id="mip-gantt-chart-card",
+                                                    id="highs-gantt-chart-card",
                                                     className="gantt-div",
                                                     children=[
                                                         html.H3(
@@ -249,9 +249,9 @@ def set_html(app):
                                                             className="gantt-title",
                                                         ),
                                                         dcc.Graph(
-                                                            id="mip-gantt-chart", responsive=True
+                                                            id="highs-gantt-chart", responsive=True
                                                         ),
-                                                        dcc.Graph(id="mip-summary-table"),
+                                                        dcc.Graph(id="highs-summary-table"),
                                                     ],
                                                 )
                                             )

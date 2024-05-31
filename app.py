@@ -86,14 +86,14 @@ with open("assets/theme.css", "w") as f:
 
 
 class Model(Enum):
-    MIP = 0
-    QM = 1
+    MILP = 0
+    MIQP = 1
 
 
 class SamplerType(Enum):
     CQM = 0
     NL = 1
-    MIP = 2
+    HIGHS = 2
 
 
 @app.callback(
@@ -140,12 +140,12 @@ def update_solver_options(
 
     Returns:
         str: The new class name of the solver-select checklist.
-        list: Unselects MIP and selects Hybrid or updates to previously selected solvers.
+        list: Unselects MILP and selects CQM or updates to previously selected solvers.
         list: Updates last_selected_solvers with the list of solvers that were selected before updating.
     """
     model = Model(model)
 
-    if model is Model.QM:
+    if model is Model.MIQP:
         return "hide-classic-and-nl", [SamplerType.CQM.value], selected_solvers
     return "", last_selected_solvers, dash.no_update
 
@@ -177,7 +177,7 @@ def update_solvers_selected(
     """
     model = Model(model)
 
-    if model is model.MIP:
+    if model is model.MILP:
         if SamplerType.CQM.value in selected_solvers:
             # make sure that correct label is disabled
             assert solver_options[1]["label"] == "NL Solver"
@@ -199,11 +199,11 @@ def update_solvers_selected(
 
 @app.callback(
     Output("dwave-tab", "label", allow_duplicate=True),
-    Output("mip-tab", "label", allow_duplicate=True),
+    Output("highs-tab", "label", allow_duplicate=True),
     Output("dwave-tab", "disabled", allow_duplicate=True),
-    Output("mip-tab", "disabled", allow_duplicate=True),
+    Output("highs-tab", "disabled", allow_duplicate=True),
     Output("dwave-tab", "className", allow_duplicate=True),
-    Output("mip-tab", "className", allow_duplicate=True),
+    Output("highs-tab", "className", allow_duplicate=True),
     Output("run-button", "className", allow_duplicate=True),
     Output("cancel-button", "className", allow_duplicate=True),
     Output("running-dwave", "data", allow_duplicate=True),
@@ -236,25 +236,25 @@ def update_tab_loading_state(
         str: Run button class.
         str: Cancel button class.
         bool: Whether Hybrid is running.
-        bool: Whether MIP is running.
+        bool: Whether HiGHS is running.
         str: The value of the tab that should be active.
     """
 
     if ctx.triggered_id == "run-button" and run_click > 0:
         run_hybrid = SamplerType.CQM.value in solvers or SamplerType.NL.value in solvers
-        run_mip = SamplerType.MIP.value in solvers
+        run_highs = SamplerType.HIGHS.value in solvers
 
         return (
             "Loading..." if run_hybrid else dash.no_update,
-            "Loading..." if run_mip else dash.no_update,
+            "Loading..." if run_highs else dash.no_update,
             True if run_hybrid else dash.no_update,
-            True if run_mip else dash.no_update,
+            True if run_highs else dash.no_update,
             "tab",
             "tab",
             "display-none",
             "",
             run_hybrid,
-            run_mip,
+            run_highs,
             "input-tab",
         )
     if ctx.triggered_id == "cancel-button" and cancel_click > 0:
@@ -354,9 +354,9 @@ def run_optimization_cqm(
 
     results = run_shop_scheduler(
         model_data,
-        use_mip_solver=False,
+        use_scipy_solver=False,
         use_nl_solver=True if SamplerType.NL.value in solvers else False,
-        allow_quadratic_constraints=(model is Model.QM),
+        allow_quadratic_constraints=(model is Model.MIQP),
         solver_time_limit=time_limit,
     )
 
@@ -367,11 +367,11 @@ def run_optimization_cqm(
 
 
 @app.callback(
-    Output("mip-gantt-chart", "figure"),
-    Output("mip-summary-table", "figure"),
-    Output("mip-tab", "className"),
-    Output("mip-tab", "label"),
-    Output("mip-tab", "disabled"),
+    Output("highs-gantt-chart", "figure"),
+    Output("highs-summary-table", "figure"),
+    Output("highs-tab", "className"),
+    Output("highs-tab", "label"),
+    Output("highs-tab", "disabled"),
     Output("running-classical", "data"),
     background=True,
     inputs=[
@@ -383,10 +383,10 @@ def run_optimization_cqm(
     cancel=[Input("cancel-button", "n_clicks")],
     prevent_initial_call=True,
 )
-def run_optimization_mip(
+def run_optimization_scipy(
     run_click: int, solvers: list[int], scenario: str, time_limit: int
 ) -> tuple[go.Figure, go.Figure, str, str, bool, bool]:
-    """Runs optimization using the COIN-OR Branch-and-Cut solver.
+    """Runs optimization using the HiGHS solver.
 
     Args:
         run_click (int): The number of times the run button has been
@@ -406,7 +406,7 @@ def run_optimization_mip(
     if ctx.triggered_id != "run-button" or run_click == 0:
         raise PreventUpdate
 
-    if SamplerType.MIP.value not in solvers:
+    if SamplerType.HIGHS.value not in solvers:
         return (dash.no_update, dash.no_update, "tab", CLASSICAL_TAB_LABEL, dash.no_update, False)
 
     start = time.perf_counter()
@@ -417,7 +417,7 @@ def run_optimization_mip(
 
     results = run_shop_scheduler(
         model_data,
-        use_mip_solver=True,
+        use_scipy_solver=True,
         allow_quadratic_constraints=False,
         solver_time_limit=time_limit,
     )
@@ -428,8 +428,8 @@ def run_optimization_mip(
         return (fig, table, "tab-fail", CLASSICAL_TAB_LABEL, False, False)
 
     fig = generate_gantt_chart(results)
-    mip_table = generate_output_table(results["Finish"].max(), time_limit, time.perf_counter() - start)
-    return (fig, mip_table, "tab-success", CLASSICAL_TAB_LABEL, False, False)
+    highs_table = generate_output_table(results["Finish"].max(), time_limit, time.perf_counter() - start)
+    return (fig, highs_table, "tab-success", CLASSICAL_TAB_LABEL, False, False)
 
 
 @app.callback(
