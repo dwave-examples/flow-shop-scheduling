@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 from collections.abc import Iterable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 sys.path.append("./src")
-from utils.utils import read_taillard_instance
+from utils.utils import read_or_library_instance, read_taillard_instance
 
 if TYPE_CHECKING:
     from numpy.typing import array_like
@@ -306,7 +307,7 @@ class JobShopData:
             if task.resource == resource
         ]
 
-    def load_from_file(self, filename: str, resource_names: list = None) -> None:
+    def load_from_file(self, filename: Union[Path, str], resource_names: list = None) -> None:
         """Loads data from a file.
 
         Args:
@@ -315,7 +316,11 @@ class JobShopData:
         if resource_names is None:
             resource_names = list(range(len(self.processing_times)))
 
-        self._processing_times = read_taillard_instance(filename)
+        if "tai" in Path(filename).name:
+            self._processing_times = read_taillard_instance(filename)
+        else:
+            self._processing_times = read_or_library_instance(filename)
+
         for machine, machine_times in enumerate(self.processing_times):
             for job, duration in enumerate(machine_times):
                 self.add_task(Task(str(job), duration=duration, resource=resource_names[machine]))

@@ -42,28 +42,48 @@ DWAVE_TAB_LABEL = "Hybrid Solver Results"
 SHOW_CQM = True
 
 # The list of scenarios that the user can choose from in the app.
-# These can be found in the 'input' directory.
+# These can be found in the 'input' directory. Only the first
+# Taillard instance for each size is loaded directly.
 SCENARIOS = {
-    "20x5": "tai20_5.txt",
-    "20x10": "tai20_10.txt",
-    "20x20": "tai20_20.txt",
-    "50x5": "tai50_5.txt",
-    "50x10": "tai50_10.txt",
-    "50x20": "tai50_20.txt",
-    "100x5": "tai100_5.txt",
-    "100x10": "tai100_10.txt",
-    "100x20": "tai100_20.txt",
-    "200x10": "tai200_10.txt",
-    "200x20": "tai200_20.txt",
-    "500x20": "tai500_20.txt",
+    "Carlier 11x5": "car1",
+    "Carlier 13x4": "car2",
+    "Carlier 12x5": "car3",
+    "Carlier 14x4": "car4",
+    "Carlier 10x6": "car5",
+    "Carlier 8x9": "car6",
+    "Carlier 7x7": "car7",
+    "Carlier 8x8": "car8",
+    "Heller 100x10": "hel1",
+    "Heller 20x10": "hel2",
+    "Reeves 20x5": "reC01",  # reC03, reC05
+    "Reeves 20x10": "reC07",  #reC09, reC11
+    "Reeves 20x15": "reC13",  #reC15, reC17
+    "Reeves 30x10": "reC19",  #reC21, reC23
+    "Reeves 30x15": "reC25",  #reC27, reC29
+    "Reeves 50x10": "reC31",  #reC33, reC35
+    "Reeves 75x20": "reC37",  #reC39, reC41
+    "Taillard 20x5": "tai20_5.txt",
+    "Taillard 20x10": "tai20_10.txt",
+    "Taillard 20x20": "tai20_20.txt",
+    "Taillard 50x5": "tai50_5.txt",
+    "Taillard 50x10": "tai50_10.txt",
+    "Taillard 50x20": "tai50_20.txt",
+    "Taillard 100x5": "tai100_5.txt",
+    "Taillard 100x10": "tai100_10.txt",
+    "Taillard 100x20": "tai100_20.txt",
+    "Taillard 200x10": "tai200_10.txt",
+    "Taillard 200x20": "tai200_20.txt",
+    "Taillard 500x20": "tai500_20.txt",
 }
+
+OR_INSTANCES = "flowshop1.txt"
 
 # solver time limits in seconds (value means default)
 SOLVER_TIME = {
     "min": 5,
     "max": 300,
     "step": 5,
-    "value": 5,
+    "value": 10,
 }
 
 # The list of resources that the user can choose from in the app
