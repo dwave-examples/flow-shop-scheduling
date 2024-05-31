@@ -29,26 +29,33 @@ THEME_COLOR_SECONDARY = "#2A7DE1"  # D-Wave blue default #2A7DE1
 
 THUMBNAIL = "assets/dwave_logo.svg"
 
-APP_TITLE = "JSS Demo"
-MAIN_HEADER = "Job Shop Scheduling"
+APP_TITLE = "FSS Demo"
+MAIN_HEADER = "Flow Shop Scheduling"
 DESCRIPTION = """\
-Run the job shop scheduling problem for several different scenarios.
+Run the flow shop scheduling problem for several different scenarios.
 Explore the Gantt Chart for solution details.
 """
 
 CLASSICAL_TAB_LABEL = "Classical Results"
-DWAVE_TAB_LABEL = "D-Wave Results"
+DWAVE_TAB_LABEL = "Hybrid Solver Results"
+
+SHOW_CQM = True
 
 # The list of scenarios that the user can choose from in the app.
 # These can be found in the 'input' directory.
 SCENARIOS = {
-    "3x3": "instance3_3.txt",
-    "5x5": "instance5_5.txt",
-    "10x10": "instance10_10.txt",
-    "15x15": "taillard15_15.txt",
-    "20x15": "instance20_15.txt",
-    "20x25": "instance20_25.txt",
-    "30x30": "instance30_30.txt",
+    "20x5": "tai20_5.txt",
+    "20x10": "tai20_10.txt",
+    "20x20": "tai20_20.txt",
+    "50x5": "tai50_5.txt",
+    "50x10": "tai50_10.txt",
+    "50x20": "tai50_20.txt",
+    "100x5": "tai100_5.txt",
+    "100x10": "tai100_10.txt",
+    "100x20": "tai100_20.txt",
+    "200x10": "tai200_10.txt",
+    "200x20": "tai200_20.txt",
+    "500x20": "tai500_20.txt",
 }
 
 # solver time limits in seconds (value means default)

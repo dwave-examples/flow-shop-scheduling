@@ -1,8 +1,14 @@
+from __future__ import annotations
+
 import sys
 from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 sys.path.append("./src")
-from utils.utils import read_instance, read_taillard_instance
+from utils.utils import read_taillard_instance
+
+if TYPE_CHECKING:
+    from numpy.typing import array_like
 
 
 class Task:
@@ -45,6 +51,18 @@ class JobShopData:
         self._jobs = set(jobs)
         self._resources = set(resources)
         self._job_tasks = {job: [] for job in jobs}
+        self._processing_times = None
+
+    @property
+    def processing_times(self) -> array_like:
+        """Returns the processing times for the problem.
+
+        Returns:
+            array_like: Processing times, as an :math:`n \times m` |array-like|_ of
+            integers, where ``processing_times[n, m]`` is the time job
+            `n` is on machine `m`.
+        """
+        return self._processing_times
 
     @property
     def jobs(self) -> Iterable[str]:
@@ -108,7 +126,7 @@ class JobShopData:
         """
         self._resources.add(resource)
 
-    def add_task(self, resource: str, job: str, duration: int, position: int = None) -> None:
+    def add_task_from_data(self, resource: str, job: str, duration: int, position: int = None) -> None:
         """Adds a task to the dataset.
 
         Args:
@@ -288,47 +306,16 @@ class JobShopData:
             if task.resource == resource
         ]
 
-    def load_from_dict(self, jobs: dict, resource_names: list = None) -> None:
-        """Loads data from a dictionary.
-
-        Args:
-            jobs (dict): the dictionary to load data from
-            resource_names: the names of the resources to be used; if you
-                want to change the resource names from the ones in the
-                input dictionary. If None, then will use the resource
-                names in the input dictionary. If there are more resources
-                in the input dictionary than in this list, then the extra
-                resources will have a suffix append to the name.
-        """
-        self.__init__()
-        resource_mapping = {}
-        unique_resource_num = 0
-        for job, task_list in jobs.items():
-            for resource, duration in task_list:
-                if resource_names is not None:
-                    if resource not in resource_mapping:
-                        quotient, remainder = divmod(unique_resource_num, len(resource_names))
-                        resource_name = resource_names[remainder]
-                        if quotient > 0:
-                            resource_name += "_" + str(quotient)
-                        resource_mapping[resource] = resource_name
-                        unique_resource_num += 1
-                        resource_mapping[resource] = resource_name
-                    else:
-                        resource_name = resource_mapping[resource]
-                else:
-                    resource_name = resource
-                self.add_task(Task(str(job), duration=duration, resource=resource_name))
-
     def load_from_file(self, filename: str, resource_names: list = None) -> None:
         """Loads data from a file.
 
         Args:
             filename (str): the file to load data from
         """
-        if "taillard" in str(filename):
-            job_dict = read_taillard_instance(filename)
-        else:
-            job_dict = read_instance(filename)
+        if resource_names is None:
+            resource_names = list(range(len(self.processing_times)))
 
-        self.load_from_dict(job_dict, resource_names=resource_names)
+        self._processing_times = read_taillard_instance(filename)
+        for machine, machine_times in enumerate(self.processing_times):
+            for job, duration in enumerate(machine_times):
+                self.add_task(Task(str(job), duration=duration, resource=resource_names[machine]))

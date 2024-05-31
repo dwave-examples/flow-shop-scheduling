@@ -1,8 +1,16 @@
+from __future__ import annotations
+
 import os
 from collections import defaultdict
+from typing import TYPE_CHECKING
+
+import numpy as np
 
 from dimod import BINARY, INTEGER, ConstrainedQuadraticModel, sym
 from tabulate import tabulate
+
+if TYPE_CHECKING:
+    from numpy.typing import array_like
 
 
 def print_cqm_stats(cqm: ConstrainedQuadraticModel) -> None:
@@ -135,19 +143,16 @@ def write_solution_to_file(
     print(f"\nSaved schedule to " f"{os.path.join(os.getcwd(), solution_file_path)}")
 
 
-def read_taillard_instance(instance_path: str) -> dict:
-    """A method that reads input instance file from the taillard
-    dataset
+def read_taillard_instance(instance_path: str) -> array_like:
+    """Reads input instance file from the taillard dataset
 
     Args:
         instance_path:  path to the job shop instance file
 
     Returns:
-        Job_dict: dictionary containing jobs as keys and a list of tuple of
+        dict: dictionary containing jobs as keys and a list of tuple of
                 machines and their processing time as values.
     """
-    job_dict = defaultdict(list)
-
     with open(instance_path) as f:
         # ignore the first line
         f.readline()
@@ -159,27 +164,19 @@ def read_taillard_instance(instance_path: str) -> dict:
         # ignore the next line
         f.readline()
 
-        # the next lines contain the processing times for each job for each resource; read this in as
-        # as matrix until "Machine" is encountered
+        # iterate through the processing times
         processing_times = []
-        line = f.readline()
-        while "Machine" not in line:
-            processing_times.append(list(map(int, line.split())))
-            line = f.readline()
+        for line in f:
+            try:
+                times = list(map(int, line.split()))
+            except ValueError:
+                # break when reaching a non-integer row
+                # e.g., end of processing-times matrix
+                break
 
-        # the next lines contain the machine order for each job; read this in as
-        # as matrix until a blank line is encountered
-        machine_order = []
-        line = f.readline()
-        while line != "\n" and line != "" and line is not None:
-            machine_order.append(list(map(int, line.split())))
-            line = f.readline()
+            processing_times.append(times)
 
-        for job in range(num_jobs):
-            for machine in range(num_machines):
-                job_dict[job].append((machine_order[job][machine], processing_times[job][machine]))
+        assert len(processing_times) == num_machines
+        assert len(processing_times[0]) == num_jobs
 
-        assert len(job_dict) == num_jobs
-        assert len(job_dict[0]) == num_machines
-
-        return job_dict
+        return np.array(processing_times)
