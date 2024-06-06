@@ -6,6 +6,7 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING, Union
 
 sys.path.append("./src")
+from app_configs import RESOURCE_NAMES
 from utils.utils import read_or_library_instance, read_taillard_instance
 
 if TYPE_CHECKING:
@@ -53,6 +54,7 @@ class JobShopData:
         self._resources = set(resources)
         self._job_tasks = {job: [] for job in jobs}
         self._processing_times = None
+        self._resource_names = None
 
     @property
     def processing_times(self) -> array_like:
@@ -82,6 +84,16 @@ class JobShopData:
             Iterable[str]: The resources in the data.
         """
         return self._resources
+
+    @property
+    def resource_names(self) -> Iterable[str, int]:
+        """Returns the resource names used.
+
+        Returns:
+            Iterable[str, int]: The resource names or machine indices used.
+        """
+        return self._resource_names or list(range(len(self.processing_times)))
+
 
     @property
     def job_tasks(self) -> dict:
@@ -307,20 +319,19 @@ class JobShopData:
             if task.resource == resource
         ]
 
-    def load_from_file(self, filename: Union[Path, str], resource_names: list = None) -> None:
+    def load_from_file(self, filename: Union[Path, str]) -> None:
         """Loads data from a file.
 
         Args:
             filename (str): the file to load data from
         """
-        if resource_names is None:
-            resource_names = list(range(len(self.processing_times)))
-
         if "tai" in Path(filename).name:
             self._processing_times = read_taillard_instance(filename)
         else:
             self._processing_times = read_or_library_instance(filename)
 
+        self._resource_names = RESOURCE_NAMES[f"cargo_loading_{len(self.processing_times)}"]
+
         for machine, machine_times in enumerate(self.processing_times):
             for job, duration in enumerate(machine_times):
-                self.add_task(Task(str(job), duration=duration, resource=resource_names[machine]))
+                self.add_task(Task(str(job), duration=duration, resource=self._resource_names[machine]))

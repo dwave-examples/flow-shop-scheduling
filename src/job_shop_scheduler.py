@@ -15,7 +15,6 @@ from dwave.system import LeapHybridCQMSampler
 from tabulate import tabulate
 
 sys.path.append("./src")
-from app_configs import RESOURCE_NAMES
 import utils.scipy_solver as scipy_solver
 import utils.plot_schedule as job_plotter
 from model_data import JobShopData
@@ -299,8 +298,9 @@ class JobShopSchedulingModel:
             for job_idx, end_time in enumerate(machine_times):
                 job = int(next(model.iter_decisions()).state()[job_idx])
 
-                task = self.model_data.get_resource_job_tasks(job=str(job), resource=RESOURCE_NAMES[machine_idx])
-                self.solution[(str(job), RESOURCE_NAMES[machine_idx])] = task, end_time - task.duration, task.duration
+                resource = self.model_data.resource_names[machine_idx]
+                task = self.model_data.get_resource_job_tasks(job=str(job), resource=resource)
+                self.solution[(str(job), resource)] = task, end_time - task.duration, task.duration
 
     def call_scipy_solver(self, time_limit: int = 100):
         """This function calls the HiGHS via SciPy and returns the solution

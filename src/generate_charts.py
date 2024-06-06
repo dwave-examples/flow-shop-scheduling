@@ -109,7 +109,7 @@ def generate_gantt_chart(
         df["JobInt"] = df[Y_AXIS_LABEL].str.replace(Y_AXIS_LABEL, "").astype(int)
     else:
         df["JobInt"] = df[Y_AXIS_LABEL]
-    df = df.sort_values(by=["JobInt", COLOR_LABEL, "Start"])
+    df = df.sort_values(by=["JobInt", "Start"])
     df = df.drop(columns=["JobInt"])
 
     df["delta"] = df.Finish - df.Start

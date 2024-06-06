@@ -51,7 +51,6 @@ from app_configs import (
     CLASSICAL_TAB_LABEL,
     DEBUG,
     DWAVE_TAB_LABEL,
-    RESOURCE_NAMES,
     SCENARIOS,
     THEME_COLOR,
     THEME_COLOR_SECONDARY,
@@ -350,7 +349,7 @@ def run_optimization_cqm(
     model_data = JobShopData()
     filename = SCENARIOS[scenario]
 
-    model_data.load_from_file(DATA_PATH.joinpath(filename), resource_names=RESOURCE_NAMES)
+    model_data.load_from_file(DATA_PATH.joinpath(filename))
 
     results = run_shop_scheduler(
         model_data,
@@ -413,7 +412,7 @@ def run_optimization_scipy(
     model_data = JobShopData()
     filename = SCENARIOS[scenario]
 
-    model_data.load_from_file(DATA_PATH.joinpath(filename), resource_names=RESOURCE_NAMES)
+    model_data.load_from_file(DATA_PATH.joinpath(filename))
 
     results = run_shop_scheduler(
         model_data,
@@ -448,7 +447,8 @@ def generate_unscheduled_gantt_chart(scenario: str) -> go.Figure:
         go.Figure: A Plotly figure object with the input data
     """
     model_data = JobShopData()
-    model_data.load_from_file(DATA_PATH.joinpath(SCENARIOS[scenario]), resource_names=RESOURCE_NAMES)
+
+    model_data.load_from_file(DATA_PATH.joinpath(SCENARIOS[scenario]))
     df = get_minimum_task_times(model_data)
     fig = generate_gantt_chart(df)
     return fig

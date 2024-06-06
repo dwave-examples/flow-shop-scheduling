@@ -87,4 +87,4 @@ SOLVER_TIME = {
 }
 
 # The list of resources that the user can choose from in the app
-RESOURCE_NAMES = json.load(open("./src/data/resource_names.json", "r"))["industrial"]
+RESOURCE_NAMES = json.load(open("./src/data/resource_names.json", "r"))
