@@ -186,7 +186,7 @@ def set_html(app):
                                             html.Div(
                                                 html.Div(
                                                     id="unscheduled-gantt-chart-card",
-                                                    className="gantt-div",
+                                                    className="gantt-chart-card",
                                                     children=[
                                                         html.H3(
                                                             "Unscheduled Jobs and Resources",
@@ -196,13 +196,15 @@ def set_html(app):
                                                             id="loading-icon-input",
                                                             children=[
                                                                 dcc.Graph(
+                                                                    className="gantt-div",
                                                                     id="unscheduled-gantt-chart",
                                                                     responsive=True,
                                                                 ),
                                                             ],
                                                         ),
                                                     ],
-                                                )
+                                                ),
+                                                className="gantt-chart-card-parent",
                                             )
                                         ],
                                     ),
@@ -216,20 +218,37 @@ def set_html(app):
                                             html.Div(
                                                 html.Div(
                                                     id="optimized-gantt-chart-card",
-                                                    className="gantt-div",
+                                                    className="gantt-chart-card",
                                                     children=[
-                                                        html.H3(
-                                                            "D-Wave Hybrid Solver",
-                                                            className="gantt-title",
+                                                        html.Div(
+                                                            [
+                                                                html.H3(
+                                                                    "D-Wave Hybrid Solver",
+                                                                    className="gantt-title",
+                                                                ),
+                                                                html.Button(id="dwave-sort-button", children="Sort by start time", n_clicks=0),
+                                                            ],
+                                                            className="gantt-heading-button",
                                                         ),
-                                                        dcc.Graph(
-                                                            id="optimized-gantt-chart",
-                                                            responsive=True,
+                                                        html.Div(
+                                                            [
+                                                                dcc.Graph(
+                                                                    id="optimized-gantt-chart-jobsort",
+                                                                    responsive=True,
+                                                                    className="gantt-div",
+                                                                ),
+                                                                dcc.Graph(
+                                                                    id="optimized-gantt-chart-startsort",
+                                                                    responsive=True,
+                                                                    className="display-none",
+                                                                ),
+                                                            ],
                                                         ),
-                                                        dcc.Graph(id="dwave-summary-table"),
+                                                        dcc.Graph(className="summary-table", id="dwave-summary-table"),
                                                     ],
-                                                )
-                                            )
+                                                ),
+                                                className="gantt-chart-card-parent",
+                                            ),
                                         ],
                                     ),
                                     dcc.Tab(
@@ -242,19 +261,37 @@ def set_html(app):
                                             html.Div(
                                                 html.Div(
                                                     id="highs-gantt-chart-card",
-                                                    className="gantt-div",
+                                                    className="gantt-chart-card",
                                                     children=[
-                                                        html.H3(
-                                                            "HiGHS Classical Solver",
-                                                            className="gantt-title",
+                                                        html.Div(
+                                                            [
+                                                                html.H3(
+                                                                    "HiGHS Classical Solver",
+                                                                    className="gantt-title",
+                                                                ),
+                                                                html.Button(id="highs-sort-button", children="Sort by start time", n_clicks=0),
+                                                            ],
+                                                            className="gantt-heading-button",
                                                         ),
-                                                        dcc.Graph(
-                                                            id="highs-gantt-chart", responsive=True
+                                                        html.Div(
+                                                            [
+                                                                dcc.Graph(
+                                                                    id="highs-gantt-chart-jobsort",
+                                                                    responsive=True,
+                                                                    className="gantt-div",
+                                                                ),
+                                                                dcc.Graph(
+                                                                    id="highs-gantt-chart-startsort",
+                                                                    responsive=True,
+                                                                    className="display-none",
+                                                                ),
+                                                            ]
                                                         ),
-                                                        dcc.Graph(id="highs-summary-table"),
+                                                        dcc.Graph(className="summary-table", id="highs-summary-table"),
                                                     ],
-                                                )
-                                            )
+                                                ),
+                                                className="gantt-chart-card-parent",
+                                            ),
                                         ],
                                     ),
                                 ],

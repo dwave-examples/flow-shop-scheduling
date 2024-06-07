@@ -12,8 +12,6 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-import pathlib
-
 import diskcache
 import pandas as pd
 import plotly.express as px
@@ -93,14 +91,13 @@ def get_empty_figure(message: str) -> go.Figure:
     return fig
 
 
-def generate_gantt_chart(
-    df: pd.DataFrame = None
-) -> go.Figure:
+def generate_gantt_chart(df: pd.DataFrame = None, sort_by: str = "JobInt",) -> go.Figure:
     """Generates a Gantt chart of the unscheduled tasks for the given scenario.
 
     Args:
         df (pd.DataFrame): A DataFrame containing the data to plot. If this is
             not None, then the scenario argument will be ignored.
+        sort_by (str): How to sort the jobs. Usually by job (``"JobInt"``) or start time (``"Start"``).
 
     Returns:
         go.Figure: A Plotly figure object.
@@ -109,14 +106,22 @@ def generate_gantt_chart(
         df["JobInt"] = df[Y_AXIS_LABEL].str.replace(Y_AXIS_LABEL, "").astype(int)
     else:
         df["JobInt"] = df[Y_AXIS_LABEL]
-    df = df.sort_values(by=["JobInt", "Start"])
-    df = df.drop(columns=["JobInt"])
 
     df["delta"] = df.Finish - df.Start
+
     df[COLOR_LABEL] = df[COLOR_LABEL].astype(str)
     df[Y_AXIS_LABEL] = df[Y_AXIS_LABEL].astype(str)
     num_items = len(df[COLOR_LABEL].unique())
     colorscale = "Agsunset"
+    colors = px.colors.sample_colorscale(
+        colorscale, [n / (num_items - 1) for n in range(num_items)]
+    )
+    color_map = dict(zip(df[COLOR_LABEL].unique(), colors))
+
+    df = df.sort_values(by=[sort_by], ascending=False)
+    df = df.drop(columns=["JobInt"])
+
+    sorted_labels = sorted(df[COLOR_LABEL].unique(), key=lambda v: int(v.split(".")[0]))
 
     fig = px.timeline(
         df,
@@ -124,9 +129,8 @@ def generate_gantt_chart(
         x_end="Finish",
         y=Y_AXIS_LABEL,
         color=COLOR_LABEL,
-        color_discrete_sequence=px.colors.sample_colorscale(
-            colorscale, [n / (num_items - 1) for n in range(num_items)]
-        ),
+        color_discrete_sequence=[color_map[label] for label in sorted_labels],
+        category_orders={COLOR_LABEL: sorted_labels}
     )
 
     for index, data in enumerate(fig.data):

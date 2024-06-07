@@ -195,20 +195,36 @@ input[type="checkbox"] {
     font-weight: bold;
 }
 
-#gantt_chart_card, #wait_time_card {
-    background-color: #FFFFFF;
-    padding: 1rem;
-    margin: auto;
-    margin-top: 20px;
+
+.gantt-chart-card {
+    height: 100%;
+    display: flex;
+    flex-flow: column;
 }
 
-#gantt_chart_card > b, #wait_time_card > b {
-    line-height: 2.5;
+.gantt-div {
+    height: 100%;
+    flex: 1 1 auto;
 }
 
+.gantt-chart-card > div{
+    height: 100%;
+}
 
-#gantt_chart {
-    height: 400px;
+.gantt-chart-card-parent {
+    height: 100%;
+}
+
+.summary-table {
+    flex: 0 1 content;
+}
+
+.gantt-heading-button {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    margin-right: 20rem;
+    flex: 0 1 content;
 }
 
 .table-row:nth-child(even) {

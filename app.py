@@ -301,7 +301,69 @@ def update_button_visibility(running_dwave: bool, running_classical: bool) -> tu
 
 
 @app.callback(
-    Output("optimized-gantt-chart", "figure"),
+    Output("optimized-gantt-chart-jobsort", "className"),
+    Output("optimized-gantt-chart-startsort", "className"),
+    Output("dwave-sort-button", "children"),
+    inputs=[
+        Input("dwave-sort-button", "n_clicks"),
+        State("dwave-sort-button", "children"),
+    ],
+    prevent_initial_call=True,
+)
+def switch_optimized_gantt_chart(new_click: int, sort_button_text: str) -> tuple[str, str, str]:
+    """Switch between the hybrid results plot sorted by job or by start time.
+
+    Args:
+        new_click (int): The number of times the sort button has been clicked.
+        sort_button_text: The text in the sort button (indicating how to sort the plot).
+
+    Return:
+        str: The hybrid results class name sorted by job (whether hidden or displayed).
+        str: The hybrid results class name sorted by start time (whether hidden or displayed).
+        str: The new text of the sort button.
+    """
+    if ctx.triggered_id != "dwave-sort-button" or new_click == 0:
+        raise PreventUpdate
+
+    if sort_button_text == "Sort by start time":
+        return "display-none", "gantt-div", "Sort by job"
+    return "gantt-div", "display-none", "Sort by start time"
+
+
+@app.callback(
+    Output("highs-gantt-chart-jobsort", "className"),
+    Output("highs-gantt-chart-startsort", "className"),
+    Output("highs-sort-button", "children"),
+    inputs=[
+        Input("highs-sort-button", "n_clicks"),
+        State("highs-sort-button", "children"),
+    ],
+    prevent_initial_call=True,
+)
+def switch_highs_gantt_chart(new_click: int, sort_button_text: str) -> tuple[str, str, str]:
+    """Switch between the classical results plot sorted by job or by start time.
+
+    Args:
+        new_click (int): The number of times the sort button has been clicked.
+        sort_button_text: The text in the sort button (indicating how to sort the plot).
+
+    Return:
+        str: The classical results class name sorted by job (whether hidden or displayed).
+        str: The classical results class name sorted by start time (whether hidden or displayed).
+        str: The new text of the sort button.
+    """
+    if ctx.triggered_id != "highs-sort-button" or new_click == 0:
+        raise PreventUpdate
+
+    if sort_button_text == "Sort by start time":
+        return "display-none", "gantt-div", "Sort by job"
+    return "gantt-div", "display-none", "Sort by start time"
+
+
+
+@app.callback(
+    Output("optimized-gantt-chart-jobsort", "figure"),
+    Output("optimized-gantt-chart-startsort", "figure"),
     Output("dwave-summary-table", "figure"),
     Output("dwave-tab", "className"),
     Output("dwave-tab", "label"),
@@ -320,7 +382,7 @@ def update_button_visibility(running_dwave: bool, running_classical: bool) -> tu
 )
 def run_optimization_cqm(
     run_click: int, model: int, solvers: list[int], scenario: str, time_limit: int
-) -> tuple[go.Figure, go.Figure, str, str, bool, bool]:
+) -> tuple[go.Figure, go.Figure, go.Figure, str, str, bool, bool]:
     """Runs optimization using the D-Wave hybrid solver.
 
     Args:
@@ -331,7 +393,8 @@ def run_optimization_cqm(
         time_limit (int): The time limit for the optimization.
 
     Returns:
-        go.Figure: Gantt chart for the D-Wave hybrid solver.
+        go.Figure: Gantt chart for the D-Wave hybrid solver sorted by job.
+        go.Figure: Gantt chart for the D-Wave hybrid solver sorted by start time.
         go.Figure: Results table for the D-Wave hybrid solver.
         str: Class name for the D-Wave tab.
         str: The label for the D-Wave tab.
@@ -342,7 +405,7 @@ def run_optimization_cqm(
         raise PreventUpdate
 
     if SamplerType.CQM.value not in solvers and SamplerType.NL.value not in solvers:
-        return (dash.no_update, dash.no_update, "tab", DWAVE_TAB_LABEL, dash.no_update, False)
+        return (dash.no_update, dash.no_update, dash.no_update, "tab", DWAVE_TAB_LABEL, dash.no_update, False)
 
     start = time.perf_counter()
     model = Model(model)
@@ -359,14 +422,16 @@ def run_optimization_cqm(
         solver_time_limit=time_limit,
     )
 
-    fig = generate_gantt_chart(results)
+    fig_jobsort = generate_gantt_chart(results, sort_by="JobInt")
+    fig_startsort = generate_gantt_chart(results, sort_by="Start")
     table = generate_output_table(results["Finish"].max(), time_limit, time.perf_counter() - start)
 
-    return (fig, table, "tab-success", DWAVE_TAB_LABEL, False, False)
+    return (fig_jobsort, fig_startsort, table, "tab-success", DWAVE_TAB_LABEL, False, False)
 
 
 @app.callback(
-    Output("highs-gantt-chart", "figure"),
+    Output("highs-gantt-chart-jobsort", "figure"),
+    Output("highs-gantt-chart-startsort", "figure"),
     Output("highs-summary-table", "figure"),
     Output("highs-tab", "className"),
     Output("highs-tab", "label"),
@@ -384,7 +449,7 @@ def run_optimization_cqm(
 )
 def run_optimization_scipy(
     run_click: int, solvers: list[int], scenario: str, time_limit: int
-) -> tuple[go.Figure, go.Figure, str, str, bool, bool]:
+) -> tuple[go.Figure, go.Figure, go.Figure, str, str, bool, bool]:
     """Runs optimization using the HiGHS solver.
 
     Args:
@@ -395,7 +460,8 @@ def run_optimization_scipy(
         time_limit (int): The time limit for the optimization.
 
     Returns:
-        go.Figure: Gantt chart for the Classical solver.
+        go.Figure: Gantt chart for the Classical solver sorted by job.
+        go.Figure: Gantt chart for the Classical solver sorted by start time.
         go.Figure: Results table for the Classical solver.
         str: Class name for the Classical tab.
         str: The label for the Classical tab.
@@ -406,7 +472,7 @@ def run_optimization_scipy(
         raise PreventUpdate
 
     if SamplerType.HIGHS.value not in solvers:
-        return (dash.no_update, dash.no_update, "tab", CLASSICAL_TAB_LABEL, dash.no_update, False)
+        return (dash.no_update, dash.no_update, dash.no_update, "tab", CLASSICAL_TAB_LABEL, dash.no_update, False)
 
     start = time.perf_counter()
     model_data = JobShopData()
@@ -424,11 +490,12 @@ def run_optimization_scipy(
     if results.empty:
         fig = get_empty_figure("No solution found for Classical solver")
         table = generate_output_table(0, time_limit, time.perf_counter() - start)
-        return (fig, table, "tab-fail", CLASSICAL_TAB_LABEL, False, False)
+        return (fig, fig, table, "tab-fail", CLASSICAL_TAB_LABEL, False, False)
 
-    fig = generate_gantt_chart(results)
+    fig_jobsort = generate_gantt_chart(results, sort_by="JobInt")
+    fig_startsort = generate_gantt_chart(results, sort_by="Start")
     highs_table = generate_output_table(results["Finish"].max(), time_limit, time.perf_counter() - start)
-    return (fig, highs_table, "tab-success", CLASSICAL_TAB_LABEL, False, False)
+    return (fig_jobsort, fig_startsort, highs_table, "tab-success", CLASSICAL_TAB_LABEL, False, False)
 
 
 @app.callback(
