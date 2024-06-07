@@ -135,16 +135,10 @@ def update_solvers_selected(
     """
 
     if SamplerType.CQM.value in selected_solvers:
-        # make sure that correct label is disabled
-        assert solver_options[1]["label"] == "NL Solver"
-
         solver_options[1]["disabled"] = True
         return solver_options
 
     elif SamplerType.NL.value in selected_solvers:
-        # make sure that correct label is disabled
-        assert solver_options[0]["label"] == "CQM Solver"
-
         solver_options[0]["disabled"] = True
         return solver_options
 

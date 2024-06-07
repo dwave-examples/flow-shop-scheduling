@@ -45,7 +45,7 @@ from app_configs import (
     THUMBNAIL
 )
 
-SOLVER_OPTIONS = ["CQM Solver", "NL Solver", "HiGHS Classical Solver"]
+SOLVER_OPTIONS = ["Quantum Hybrid (CQM)", "Quantum Hybrid (NL)", "Classical (HiGHS)"]
 
 
 def description_card():
@@ -95,7 +95,7 @@ def generate_control_card() -> html.Div:
                 "scenario-select",
                 scenario_options,
             ),
-            html.Label("Solver"),
+            html.Label("Solver (hybrid and/or classical)"),
             dcc.Checklist(
                 id="solver-select",
                 options=solver_options,
