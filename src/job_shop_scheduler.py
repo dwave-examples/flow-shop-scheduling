@@ -158,32 +158,6 @@ class JobShopSchedulingModel:
                     label="pj{}_m{}".format(job, machine_curr),
                 )
 
-    def add_quadratic_overlap_constraint(self, model_data: JobShopData) -> None:
-        """Add quadratic constraints to ensure that no two jobs can be scheduled
-         on the same machine at the same time.
-
-         Args:
-             model_data: a JobShopData data class
-
-        Modifies:
-            self.cqm: adds quadratic constraints to the CQM model
-        """
-        for j in model_data.jobs:
-            for k in model_data.jobs:
-                if j < k:
-                    for i in model_data.resources:
-                        task_k = model_data.get_resource_job_tasks(job=k, resource=i)
-                        task_j = model_data.get_resource_job_tasks(job=j, resource=i)
-
-                        if task_k.duration > 0 and task_j.duration > 0:
-                            self.cqm.add_constraint(
-                                self.x[(j, i)]
-                                - self.x[(k, i)]
-                                + (task_k.duration - task_j.duration) * self.y[(j, k, i)]
-                                + 2 * self.y[(j, k, i)] * (self.x[(k, i)] - self.x[(j, i)])
-                                >= task_k.duration,
-                                label="OneJobj{}_j{}_m{}".format(j, k, i),
-                            )
 
     def add_disjunctive_constraints(self, model_data: JobShopData) -> None:
         """This function adds the disjunctive constraints the prevent two jobs
@@ -408,7 +382,6 @@ def run_shop_scheduler(
     use_scipy_solver: bool = False,
     use_nl_solver: bool = False,
     verbose: bool = False,
-    allow_quadratic_constraints: bool = True,
     out_sol_file: str = None,
     out_plot_file: str = None,
     profile: str = None,
@@ -425,8 +398,6 @@ def run_shop_scheduler(
         use_scipy_solver (bool, optional): Whether to use the HiGHS via SciPy solver instead of the CQM solver.
             Defaults to False.
         verbose (bool, optional): Whether to print verbose output. Defaults to False.
-        allow_quadratic_constraints (bool, optional): Whether to allow quadratic constraints.
-            Defaults to True.
         out_sol_file (str, optional): Path to the output solution file. Defaults to None.
         out_plot_file (str, optional): Path to the output plot file. Defaults to None.
         profile (str, optional): The profile variable to pass to the Sampler. Defaults to None.
@@ -440,9 +411,6 @@ def run_shop_scheduler(
         Resource.
 
     """
-    if allow_quadratic_constraints and use_scipy_solver:
-        raise ValueError("Cannot use quadratic constraints with HiGHS solver")
-
     model_building_start = time()
     model = JobShopSchedulingModel(
         model_data=job_data, max_makespan=max_makespan, greedy_multiplier=greedy_multiplier
@@ -451,10 +419,7 @@ def run_shop_scheduler(
     model.define_variables(job_data)
     model.add_precedence_constraints(job_data)
 
-    if allow_quadratic_constraints:
-        model.add_quadratic_overlap_constraint(job_data)
-    else:
-        model.add_disjunctive_constraints(job_data)
+    model.add_disjunctive_constraints(job_data)
     model.add_makespan_constraint(job_data)
     model.define_objective_function()
 
@@ -554,10 +519,6 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "-q", "--allow_quad", action="store_true", help="Whether to allow quadratic constraints"
-    )
-
-    parser.add_argument(
         "-p",
         "--profile",
         type=str,
@@ -579,7 +540,6 @@ if __name__ == "__main__":
     time_limit = args.time_limit
     out_plot_file = args.output_plot
     out_sol_file = args.output_solution
-    allow_quadratic_constraints = args.allow_quad
     max_makespan = args.max_makespan
     profile = args.profile
     use_scipy_solver = args.use_scipy_solver
@@ -593,7 +553,6 @@ if __name__ == "__main__":
         time_limit,
         verbose=verbose,
         use_scipy_solver=use_scipy_solver,
-        allow_quadratic_constraints=allow_quadratic_constraints,
         profile=profile,
         max_makespan=max_makespan,
         out_sol_file=out_sol_file,

@@ -84,11 +84,6 @@ with open("assets/theme.css", "w") as f:
     f.write(css)
 
 
-class Model(Enum):
-    MILP = 0
-    MIQP = 1
-
-
 class SamplerType(Enum):
     CQM = 0
     NL = 1
@@ -115,51 +110,16 @@ def toggle_left_column(left_column_collapse: int, class_name: str) -> str:
     """
     return "" if class_name else "collapsed"
 
-
-@app.callback(
-    Output("solver-select", "className"),
-    Output("solver-select", "value"),
-    Output("last-selected-solvers", "data"),
-    inputs=[
-        Input("model-select", "value"),
-        State("solver-select", "value"),
-        State("last-selected-solvers", "data"),
-    ],
-    prevent_initial_call=True,
-)
-def update_solver_options(
-    model: int, selected_solvers: list[int], last_selected_solvers: list[int]
-) -> tuple[str, list[int], list[int]]:
-    """Hides and shows classical solver option using 'hide-classic-and-nl' class
-
-    Args:
-        model_value (int): Currently selected model from model-select dropdown.
-        selected_solvers (list[int]): Currently selected solvers.
-        last_selected_solvers (list[int]): Previously selected solvers.
-
-    Returns:
-        str: The new class name of the solver-select checklist.
-        list: Unselects MILP and selects CQM or updates to previously selected solvers.
-        list: Updates last_selected_solvers with the list of solvers that were selected before updating.
-    """
-    model = Model(model)
-
-    if model is Model.MIQP:
-        return "hide-classic-and-nl", [SamplerType.CQM.value], selected_solvers
-    return "", last_selected_solvers, dash.no_update
-
 @app.callback(
     Output("solver-select", "options"),
     inputs=[
         Input("solver-select", "value"),
-        Input("model-select", "value"),
         State("solver-select", "options"),
     ],
     prevent_initial_call=True,
 )
 def update_solvers_selected(
     selected_solvers: list[int],
-    model: int,
     solver_options: list[dict]
 ) -> list[dict]:
     """Disable NL/CQM solver checkboxes when the other one is selected.
@@ -168,28 +128,25 @@ def update_solvers_selected(
 
     Args:
         selected_solvers (list[int]): Currently selected solvers.
-        model_value (int): Currently selected model from model-select dropdown.
         list: List of solver checkbox options.
 
     Returns:
         list: Updated list of solver checkbox options.
     """
-    model = Model(model)
 
-    if model is model.MILP:
-        if SamplerType.CQM.value in selected_solvers:
-            # make sure that correct label is disabled
-            assert solver_options[1]["label"] == "NL Solver"
+    if SamplerType.CQM.value in selected_solvers:
+        # make sure that correct label is disabled
+        assert solver_options[1]["label"] == "NL Solver"
 
-            solver_options[1]["disabled"] = True
-            return solver_options
+        solver_options[1]["disabled"] = True
+        return solver_options
 
-        elif SamplerType.NL.value in selected_solvers:
-            # make sure that correct label is disabled
-            assert solver_options[0]["label"] == "CQM Solver"
+    elif SamplerType.NL.value in selected_solvers:
+        # make sure that correct label is disabled
+        assert solver_options[0]["label"] == "CQM Solver"
 
-            solver_options[0]["disabled"] = True
-            return solver_options
+        solver_options[0]["disabled"] = True
+        return solver_options
 
     solver_options[0]["disabled"] = False
     solver_options[1]["disabled"] = False
@@ -372,7 +329,6 @@ def switch_highs_gantt_chart(new_click: int, sort_button_text: str) -> tuple[str
     background=True,
     inputs=[
         Input("run-button", "n_clicks"),
-        State("model-select", "value"),
         State("solver-select", "value"),
         State("scenario-select", "value"),
         State("solver-time-limit", "value"),
@@ -381,13 +337,12 @@ def switch_highs_gantt_chart(new_click: int, sort_button_text: str) -> tuple[str
     prevent_initial_call=True,
 )
 def run_optimization_cqm(
-    run_click: int, model: int, solvers: list[int], scenario: str, time_limit: int
+    run_click: int, solvers: list[int], scenario: str, time_limit: int
 ) -> tuple[go.Figure, go.Figure, go.Figure, str, str, bool, bool]:
     """Runs optimization using the D-Wave hybrid solver.
 
     Args:
         run_click (int): The number of times the run button has been clicked.
-        model (int): The model to use for the optimization.
         solvers (list[int]): The solvers that have been selected.
         scenario (str): The scenario to use for the optimization.
         time_limit (int): The time limit for the optimization.
@@ -408,7 +363,6 @@ def run_optimization_cqm(
         return (dash.no_update, dash.no_update, dash.no_update, "tab", DWAVE_TAB_LABEL, dash.no_update, False)
 
     start = time.perf_counter()
-    model = Model(model)
     model_data = JobShopData()
     filename = SCENARIOS[scenario]
 
@@ -418,7 +372,6 @@ def run_optimization_cqm(
         model_data,
         use_scipy_solver=False,
         use_nl_solver=True if SamplerType.NL.value in solvers else False,
-        allow_quadratic_constraints=(model is Model.MIQP),
         solver_time_limit=time_limit,
     )
 
@@ -483,7 +436,6 @@ def run_optimization_scipy(
     results = run_shop_scheduler(
         model_data,
         use_scipy_solver=True,
-        allow_quadratic_constraints=False,
         solver_time_limit=time_limit,
     )
 

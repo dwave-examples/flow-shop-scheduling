@@ -45,7 +45,6 @@ from app_configs import (
     THUMBNAIL
 )
 
-MODEL_OPTIONS = ["Mixed Integer Linear Model", "Mixed Integer Quadratic Model"]
 SOLVER_OPTIONS = ["CQM Solver", "NL Solver", "HiGHS Classical Solver"]
 
 
@@ -84,9 +83,6 @@ def generate_control_card() -> html.Div:
     """
 
     scenario_options = [{"label": scenario, "value": scenario} for scenario in SCENARIOS]
-    model_options = [
-        {"label": model_option, "value": i} for i, model_option in enumerate(MODEL_OPTIONS)
-    ]
     solver_options = [
         {"label": solver_value, "value": i} for i, solver_value in enumerate(SOLVER_OPTIONS)
     ]
@@ -98,11 +94,6 @@ def generate_control_card() -> html.Div:
                 "Scenario (jobs x resources)",
                 "scenario-select",
                 scenario_options,
-            ),
-            dropdown(
-                "Model",
-                "model-select",
-                model_options,
             ),
             html.Label("Solver"),
             dcc.Checklist(
@@ -138,7 +129,6 @@ def set_html(app):
     app.layout = html.Div(
         id="app-container",
         children=[
-            dcc.Store("last-selected-solvers"),
             dcc.Store("running-dwave"),
             dcc.Store("running-classical"),
             # Banner

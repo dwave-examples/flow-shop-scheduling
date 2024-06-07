@@ -29,7 +29,6 @@ This will call the job shop scheduling algorithm for the input instance file. Co
 -  -op (--output_plot): path to the output plot file (default: output/schedule.png)
 -  -m (--use_scipy_solver): Whether to use the HiGHS via SciPy solver instead of the CQM solver (default: False)
 -  -v (--verbose): Whether to print verbose output (default: True)
--  -q (--allow_quad): Whether to allow quadratic constraints (default: False)
 -  -p (--profile): The profile variable to pass to the Sampler. Defaults to None. (default: None)
 -  -mm (--max_makespan): Upperbound on how long the schedule can be; leave empty to auto-calculate an appropriate value. (default: None)
 
@@ -144,7 +143,7 @@ There are two cases:
   ![equation2_1](_static/eq2_1.png)
 - if `y_j,k,i = 1` job `k` is processed after job `j`:
   ![equation2_2](_static/eq2_2.png)
-  Since these equations are applied to every pair of jobs, they guarantee that the jobs don't overlap on a machine. If -allow_quad is set to False, this mixed integer formulation of this constraint will be used.
+  Since these equations are applied to every pair of jobs, they guarantee that the jobs don't overlap on a machine.
 
 #### Make-Span Constraint
 In this demonstration, the maximum makespan can be defined by the user or it will be determined using a greedy heuristic. Placing an upper bound on the makespan improves the performance of the D-Wave sampler; however, if the upper bound is too low then the sampler may fail to find a feasible solution.
