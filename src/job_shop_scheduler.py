@@ -3,9 +3,11 @@ This module contains the JobShopSchedulingCQM class, which is used to build and
 solve a Job Shop Scheduling problem using CQM.
 
 """
+from __future__ import annotations
 
 import argparse
 import sys
+from typing import TYPE_CHECKING
 import warnings
 from time import time
 
@@ -23,6 +25,9 @@ from utils.utils import print_cqm_stats, write_solution_to_file
 
 from nlsolver import HSSNLSolver
 from dwave.optimization.generators import flow_shop_scheduling
+
+if TYPE_CHECKING:
+    import dwave.optimization
 
 
 def generate_greedy_makespan(job_data: JobShopData, num_samples: int = 100) -> int:
@@ -280,6 +285,62 @@ class JobShopSchedulingModel:
 
         self.completion_time = self.best_sample["makespan"]
 
+    def _calculate_end_times(
+            self, nl_model: dwave.optimization.Model, model_data: JobShopData
+        ) -> list[list[int]]:
+        """Calculate the end-times for the FSS job results.
+
+        Helper function to calculate the end-times for the FSS job
+        results obtained from the NL Solver. Taken directly from the
+        FSS generator in the NL Solver generators module.
+
+        Update when symbol labels are supported.
+
+        Args:
+            nl_model (dwave.optimization.Model): the NL Solver model containing the results
+            model_data (JobShopData): a JobShopData data class
+
+        Returns:
+            list[list[int]]: end-times from the problem results
+        """
+        times = model_data.processing_times
+        num_machines, num_jobs = len(times), len(times[0])
+
+        order = next(nl_model.iter_decisions()).state(0).astype(int)
+        print(order)
+
+        end_times = []
+        for machine_m in range(num_machines):
+
+            machine_m_times = []
+            if machine_m == 0:
+
+                for job_j in range(num_jobs):
+
+                    if job_j == 0:
+                        machine_m_times.append(times[machine_m, :][order[job_j]])
+                    else:
+                        end_job_j = times[machine_m, :][order[job_j]]
+                        end_job_j += machine_m_times[-1]
+                        machine_m_times.append(end_job_j)
+
+            else:
+
+                for job_j in range(num_jobs):
+
+                    if job_j == 0:
+                        end_job_j = end_times[machine_m - 1][job_j]
+                        end_job_j += times[machine_m, :][order[job_j]]
+                        machine_m_times.append(end_job_j)
+                    else:
+                        end_job_j = max(end_times[machine_m - 1][job_j], machine_m_times[-1])
+                        end_job_j += times[machine_m, :][order[job_j]]
+                        machine_m_times.append(end_job_j)
+
+            end_times.append(machine_m_times)
+
+        return end_times
+
     def call_nl_solver(self, time_limit: int, model_data: JobShopData) -> None:
         """Calls NL solver.
 
@@ -290,13 +351,14 @@ class JobShopSchedulingModel:
         Modifies:
             self.solution: the solution to the problem
         """
-        model, end_times = flow_shop_scheduling(processing_times=model_data.processing_times)
-        _ = HSSNLSolver().solve(model, time_limit=time_limit)
+        nl_model = flow_shop_scheduling(processing_times=model_data.processing_times)
+        _ = HSSNLSolver().solve(nl_model, time_limit=time_limit)
 
-        end_times = [[float(i.state()) for i in j ] for j in end_times]
+        end_times = self._calculate_end_times(nl_model, model_data)
+
         for machine_idx, machine_times in enumerate(end_times):
             for job_idx, end_time in enumerate(machine_times):
-                job = int(next(model.iter_decisions()).state()[job_idx])
+                job = int(next(nl_model.iter_decisions()).state()[job_idx])
 
                 resource = self.model_data.resource_names[machine_idx]
                 task = self.model_data.get_resource_job_tasks(job=str(job), resource=resource)
