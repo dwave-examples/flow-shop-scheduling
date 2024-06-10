@@ -145,28 +145,3 @@ def generate_gantt_chart(df: pd.DataFrame = None, sort_by: str = "JobInt",) -> g
         xaxis_title="Time Period",
     )
     return fig
-
-
-def generate_output_table(make_span: int, solver_time_limit: int, total_time: int) -> go.Figure:
-    """Generates an output table for the optimization results.
-    The table will contain the make-span, solver time limit, and total time
-    for the optimization.
-
-    Args:
-        make_span (int): The make-span for the optimization.
-        solver_time_limit (int): The solver time limit for the optimization.
-        total_time (int): The total time for the optimization.
-
-    Returns:
-        go.Figure: A Plotly figure object containing the output table.
-    """
-    fig = go.Figure(
-        data=[
-            go.Table(
-                header=dict(values=["Make-span", "Solver Time Limit", "Total Time"]),
-                cells=dict(values=[[make_span], [f"{solver_time_limit}s"], [f"{total_time:.2f}s"]]),
-            )
-        ]
-    )
-    fig.update_layout(margin=dict(l=20, r=20, t=10, b=10), height=100, autosize=False)
-    return fig

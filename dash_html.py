@@ -124,6 +124,73 @@ def generate_control_card() -> html.Div:
     )
 
 
+def problem_details(solver: str) -> html.Div:
+    """generate the problem details section.
+
+    Args:
+        solver: Which solver tab to generate the section for. Either "dwave" or "highs"
+
+    Returns:
+        html.Div: Div containing a collapsable table.
+    """
+    return html.Div(
+        [
+            html.Div(
+                id={"type": "to-collapse-class", "index": 1 if solver == "dwave" else 2},
+                className="details-collapse-wrapper collapsed",
+                children=[
+                    html.Button(
+                        id={"type": "collapse-trigger", "index": 1 if solver == "dwave" else 2},
+                        className="details-collapse",
+                        children=[
+                            html.H5("Problem Details"),
+                            html.Div(className="collapse-arrow"),
+                        ],
+                    ),
+                    html.Div(
+                        className="details-to-collapse",
+                        children=[
+                            html.Table(
+                                id="solution-stats-table",
+                                children=[
+                                    html.Tbody(
+                                        id="problem-details",
+                                        children=[
+                                            html.Tr(
+                                                [
+                                                    html.Td("Scenario"),
+                                                    html.Td(id=f"{solver}-stats-scenario"),
+                                                    html.Td("Solver Time Limit [s]"),
+                                                    html.Td(id=f"{solver}-stats-time-limit"),
+                                                ]
+                                            ),
+                                            html.Tr(
+                                                [
+                                                    html.Td("Solver"),
+                                                    html.Td(id=f"{solver}-stats-solver"),
+                                                    html.Td("Wall Clock Time [s]"),
+                                                    html.Td(id=f"{solver}-stats-wall-clock-time"),
+                                                ]
+                                            ),
+                                            html.Tr(
+                                                [
+                                                    html.Td("Number of Jobs"),
+                                                    html.Td(id=f"{solver}-stats-jobs"),
+                                                    html.Td("Number of Resources"),
+                                                    html.Td(id=f"{solver}-stats-resources"),
+                                                ]
+                                            ),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+
 # set the application HTML
 def set_html(app):
     app.layout = html.Div(
@@ -138,7 +205,8 @@ def set_html(app):
                 children=[
                     # Left column
                     html.Div(
-                        id="left-column",
+                        id={"type": "to-collapse-class", "index": 0},
+                        className="left-column",
                         children=[
                             html.Div(
                                 [  # Fixed width Div to collapse
@@ -156,7 +224,11 @@ def set_html(app):
                                 ]
                             ),
                             html.Div(
-                                html.Button(id="left-column-collapse", children=[html.Div()]),
+                                html.Button(
+                                    id={"type": "collapse-trigger", "index": 0},
+                                    className="left-column-collapse",
+                                    children=[html.Div(className="collapse-arrow")],
+                                ),
                             ),
                         ],
                     ),
@@ -234,7 +306,19 @@ def set_html(app):
                                                                 ),
                                                             ],
                                                         ),
-                                                        dcc.Graph(className="summary-table", id="dwave-summary-table"),
+                                                        html.Div(
+                                                            [
+                                                                html.Hr(),
+                                                                html.Div(
+                                                                    [
+                                                                        html.H5(id="dwave-stats-make-span"),
+                                                                        problem_details("dwave"),
+                                                                    ],
+                                                                    className="problem-details"
+                                                                ),
+                                                            ],
+                                                            className="problem-details-parent",
+                                                        ),
                                                     ],
                                                 ),
                                                 className="gantt-chart-card-parent",
@@ -277,7 +361,19 @@ def set_html(app):
                                                                 ),
                                                             ]
                                                         ),
-                                                        dcc.Graph(className="summary-table", id="highs-summary-table"),
+                                                        html.Div(
+                                                            [
+                                                                html.Hr(),
+                                                                html.Div(
+                                                                    [
+                                                                        html.H5(id="highs-stats-make-span"),
+                                                                        problem_details("highs"),
+                                                                    ],
+                                                                    className="problem-details"
+                                                                ),
+                                                            ],
+                                                            className="problem-details-parent",
+                                                        ),
                                                     ],
                                                 ),
                                                 className="gantt-chart-card-parent",

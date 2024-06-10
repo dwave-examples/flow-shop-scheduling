@@ -37,7 +37,7 @@ from enum import Enum
 import dash
 import diskcache
 import plotly.graph_objs as go
-from dash import DiskcacheManager, ctx
+from dash import DiskcacheManager, ctx, MATCH
 from dash.dependencies import ClientsideFunction, Input, Output, State
 from dash.exceptions import PreventUpdate
 
@@ -55,7 +55,7 @@ from app_configs import (
     THEME_COLOR,
     THEME_COLOR_SECONDARY,
 )
-from src.generate_charts import generate_gantt_chart, generate_output_table, get_empty_figure, get_minimum_task_times
+from src.generate_charts import generate_gantt_chart, get_empty_figure, get_minimum_task_times
 from src.job_shop_scheduler import run_shop_scheduler
 from src.model_data import JobShopData
 
@@ -91,24 +91,29 @@ class SamplerType(Enum):
 
 
 @app.callback(
-    Output("left-column", "className"),
+    Output({"type": "to-collapse-class", "index": MATCH}, "className"),
     inputs=[
-        Input("left-column-collapse", "n_clicks"),
-        State("left-column", "className"),
+        Input({"type": "collapse-trigger", "index": MATCH}, "n_clicks"),
+        State({"type": "to-collapse-class", "index": MATCH}, "className"),
     ],
     prevent_initial_call=True,
 )
-def toggle_left_column(left_column_collapse: int, class_name: str) -> str:
-    """Toggles left column 'collapsed' class that hides and shows the left column.
+def toggle_left_column(collapse_trigger: int, to_collapse_class: str) -> str:
+    """Toggles a 'collapsed' class that hides and shows some aspect of the UI.
 
     Args:
-        left_column_collapse (int): The (total) number of times the collapse button has been clicked.
-        class_name (str): Current class name of the left column, 'collapsed' if not visible, empty string if visible
+        collapse_trigger (int): The (total) number of times a collapse button has been clicked.
+        to_collapse_class (str): Current class name of the thing to collapse, 'collapsed' if not visible, empty string if visible
 
     Returns:
-        str: The new class name of the left column.
+        str: The new class name of the section to collapse.
     """
-    return "" if class_name else "collapsed"
+    classes = to_collapse_class.split(" ") if to_collapse_class else []
+    if "collapsed" in classes:
+        classes.remove("collapsed")
+        return " ".join(classes)
+    return to_collapse_class + " collapsed" if to_collapse_class else "collapsed"
+
 
 @app.callback(
     Output("solver-select", "options"),
@@ -315,7 +320,13 @@ def switch_highs_gantt_chart(new_click: int, sort_button_text: str) -> tuple[str
 @app.callback(
     Output("optimized-gantt-chart-jobsort", "figure"),
     Output("optimized-gantt-chart-startsort", "figure"),
-    Output("dwave-summary-table", "figure"),
+    Output("dwave-stats-make-span", "children"),
+    Output("dwave-stats-time-limit", "children"),
+    Output("dwave-stats-wall-clock-time", "children"),
+    Output("dwave-stats-scenario", "children"),
+    Output("dwave-stats-solver", "children"),
+    Output("dwave-stats-jobs", "children"),
+    Output("dwave-stats-resources", "children"),
     Output("dwave-tab", "className"),
     Output("dwave-tab", "label"),
     Output("dwave-tab", "disabled"),
@@ -332,7 +343,7 @@ def switch_highs_gantt_chart(new_click: int, sort_button_text: str) -> tuple[str
 )
 def run_optimization_cqm(
     run_click: int, solvers: list[int], scenario: str, time_limit: int
-) -> tuple[go.Figure, go.Figure, go.Figure, str, str, bool, bool]:
+) -> tuple[go.Figure, go.Figure, str, str, str, str, str, str, str, str, str, bool, bool]:
     """Runs optimization using the D-Wave hybrid solver.
 
     Args:
@@ -344,7 +355,13 @@ def run_optimization_cqm(
     Returns:
         go.Figure: Gantt chart for the D-Wave hybrid solver sorted by job.
         go.Figure: Gantt chart for the D-Wave hybrid solver sorted by start time.
-        go.Figure: Results table for the D-Wave hybrid solver.
+        str: Final make-span for the D-Wave tab.
+        str: Set time limit for the D-Wave tab.
+        str: Wall clock time for the D-Wave tab.
+        str: Scenario for the D-Wave tab.
+        str: Solver for the D-Wave tab.
+        str: Number of jobs for the D-Wave tab.
+        str: Number of resources the D-Wave tab.
         str: Class name for the D-Wave tab.
         str: The label for the D-Wave tab.
         bool: True if D-Wave tab should be disabled, False otherwise.
@@ -354,7 +371,7 @@ def run_optimization_cqm(
         raise PreventUpdate
 
     if SamplerType.CQM.value not in solvers and SamplerType.NL.value not in solvers:
-        return (dash.no_update, dash.no_update, dash.no_update, "tab", DWAVE_TAB_LABEL, dash.no_update, False)
+        return (*([dash.no_update] * 9), "tab", DWAVE_TAB_LABEL, dash.no_update, False)
 
     start = time.perf_counter()
     model_data = JobShopData()
@@ -371,15 +388,30 @@ def run_optimization_cqm(
 
     fig_jobsort = generate_gantt_chart(results, sort_by="JobInt")
     fig_startsort = generate_gantt_chart(results, sort_by="Start")
-    table = generate_output_table(results["Finish"].max(), time_limit, time.perf_counter() - start)
 
-    return (fig_jobsort, fig_startsort, table, "tab-success", DWAVE_TAB_LABEL, False, False)
+    table = (
+        f"Make-span: {int(results['Finish'].max())}",
+        time_limit,
+        round(time.perf_counter() - start, 2),
+        scenario,
+        "NL Solver" if SamplerType.NL.value in solvers else "CQM Solver",
+        model_data.get_job_count(),
+        model_data.get_resource_count(),
+        )
+
+    return (fig_jobsort, fig_startsort, *table, "tab-success", DWAVE_TAB_LABEL, False, False)
 
 
 @app.callback(
     Output("highs-gantt-chart-jobsort", "figure"),
     Output("highs-gantt-chart-startsort", "figure"),
-    Output("highs-summary-table", "figure"),
+    Output("highs-stats-make-span", "children"),
+    Output("highs-stats-time-limit", "children"),
+    Output("highs-stats-wall-clock-time", "children"),
+    Output("highs-stats-scenario", "children"),
+    Output("highs-stats-solver", "children"),
+    Output("highs-stats-jobs", "children"),
+    Output("highs-stats-resources", "children"),
     Output("highs-tab", "className"),
     Output("highs-tab", "label"),
     Output("highs-tab", "disabled"),
@@ -396,7 +428,7 @@ def run_optimization_cqm(
 )
 def run_optimization_scipy(
     run_click: int, solvers: list[int], scenario: str, time_limit: int
-) -> tuple[go.Figure, go.Figure, go.Figure, str, str, bool, bool]:
+) -> tuple[go.Figure, go.Figure, str, str, str, str, str, str, str, str, str, bool, bool]:
     """Runs optimization using the HiGHS solver.
 
     Args:
@@ -409,7 +441,13 @@ def run_optimization_scipy(
     Returns:
         go.Figure: Gantt chart for the Classical solver sorted by job.
         go.Figure: Gantt chart for the Classical solver sorted by start time.
-        go.Figure: Results table for the Classical solver.
+        str: Final make-span for the Classical tab.
+        str: Set time limit for the Classical tab.
+        str: Wall clock time for the Classical tab.
+        str: Scenario for the Classical tab.
+        str: Solver for the Classical tab.
+        str: Number of jobs for the Classical tab.
+        str: Number of resources the Classical tab.
         str: Class name for the Classical tab.
         str: The label for the Classical tab.
         bool: True if Classical tab should be disabled, False otherwise.
@@ -419,7 +457,7 @@ def run_optimization_scipy(
         raise PreventUpdate
 
     if SamplerType.HIGHS.value not in solvers:
-        return (dash.no_update, dash.no_update, dash.no_update, "tab", CLASSICAL_TAB_LABEL, dash.no_update, False)
+        return (*([dash.no_update] * 9), "tab", CLASSICAL_TAB_LABEL, dash.no_update, False)
 
     start = time.perf_counter()
     model_data = JobShopData()
@@ -435,13 +473,30 @@ def run_optimization_scipy(
 
     if results.empty:
         fig = get_empty_figure("No solution found for Classical solver")
-        table = generate_output_table(0, time_limit, time.perf_counter() - start)
-        return (fig, fig, table, "tab-fail", CLASSICAL_TAB_LABEL, False, False)
+        table = (
+            "Make-span: 0",
+            time_limit,
+            round(time.perf_counter() - start, 2),
+            scenario,
+            "HiGHS",
+            model_data.get_job_count(),
+            model_data.get_resource_count(),
+            )
+        return (fig, fig, *table, "tab-fail", CLASSICAL_TAB_LABEL, False, False)
 
     fig_jobsort = generate_gantt_chart(results, sort_by="JobInt")
     fig_startsort = generate_gantt_chart(results, sort_by="Start")
-    highs_table = generate_output_table(results["Finish"].max(), time_limit, time.perf_counter() - start)
-    return (fig_jobsort, fig_startsort, highs_table, "tab-success", CLASSICAL_TAB_LABEL, False, False)
+
+    table = (
+        f"Make-span: {int(results['Finish'].max())}",
+        time_limit,
+        round(time.perf_counter() - start, 2),
+        scenario,
+        "HiGHS",
+        model_data.get_job_count(),
+        model_data.get_resource_count(),
+        )
+    return (fig_jobsort, fig_startsort, *table, "tab-success", CLASSICAL_TAB_LABEL, False, False)
 
 
 @app.callback(
