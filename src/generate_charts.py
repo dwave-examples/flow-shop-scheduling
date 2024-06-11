@@ -24,7 +24,7 @@ background_callback_manager = DiskcacheManager(cache)
 from src.model_data import JobShopData
 
 Y_AXIS_LABEL = "Job"
-COLOR_LABEL = "Resource"
+COLOR_LABEL = "Resource"  # must be resource label
 
 
 def get_minimum_task_times(job_shop_data: JobShopData) -> pd.DataFrame:
@@ -111,12 +111,15 @@ def generate_gantt_chart(df: pd.DataFrame = None, sort_by: str = "JobInt",) -> g
 
     df[COLOR_LABEL] = df[COLOR_LABEL].astype(str)
     df[Y_AXIS_LABEL] = df[Y_AXIS_LABEL].astype(str)
-    num_items = len(df[COLOR_LABEL].unique())
+
+    # get the unique resource labels in order
+    color_labels = sorted(df[COLOR_LABEL].unique(), key=lambda r: int(r.split(".")[0]))
+    num_items = len(color_labels)
     colorscale = "Agsunset"
     colors = px.colors.sample_colorscale(
         colorscale, [n / (num_items - 1) for n in range(num_items)]
     )
-    color_map = dict(zip(df[COLOR_LABEL].unique(), colors))
+    color_map = dict(zip(color_labels, colors))
 
     df = df.sort_values(by=[sort_by], ascending=False)
     df = df.drop(columns=["JobInt"])

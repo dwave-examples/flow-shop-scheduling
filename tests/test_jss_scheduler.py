@@ -71,11 +71,11 @@ class TestData(unittest.TestCase):
         model_data.load_from_file(input_file)
         model = JobShopSchedulingModel(model_data)
         model.define_cqm_model()
-        model.define_variables(model_data)
+        model.define_cqm_variables(model_data)
         model.add_precedence_constraints(model_data)
         model.add_quadratic_overlap_constraint(model_data)
         model.add_makespan_constraint(model_data)
-        model.define_objective_function()
+        model.define_cqm_objective()
         cqm = model.cqm
         num_binaries = sum(cqm.vartype(v) is BINARY for v in cqm.variables)
         self.assertEqual(num_binaries, 7)

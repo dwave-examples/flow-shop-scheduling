@@ -9,12 +9,10 @@ import argparse
 import sys
 from typing import TYPE_CHECKING
 import warnings
-from time import time
 
 import pandas as pd
 from dimod import Binary, ConstrainedQuadraticModel, Integer
 from dwave.system import LeapHybridCQMSampler
-from tabulate import tabulate
 
 sys.path.append("./src")
 import utils.scipy_solver as scipy_solver
@@ -53,7 +51,7 @@ def generate_greedy_makespan(job_data: JobShopData, num_samples: int = 100) -> i
 
 
 class JobShopSchedulingModel:
-    """Builds and solves a Job Shop Scheduling problem using CQM.
+    """Builds and solves a Job Shop Scheduling problem using CQM or the NL Solver.
 
     Args:
         model_data (JobShopData): The data for the job shop scheduling
@@ -66,12 +64,9 @@ class JobShopSchedulingModel:
     Attributes:
         model_data (JobShopData): The data for the job shop scheduling
         cqm (ConstrainedQuadraticModel): The CQM model
-        x (dict): A dictionary of the integer variables for the start time of using machine i for job j
-        y (dict): A dictionary of the binary variables which equals to 1 if job j precedes job k on machine i
-        makespan (Integer): The makespan variable
-        best_sample (dict): The best sample found by the CQM solver
+        nl_model (nlsolver.Model): The NL Solver model
         solution (dict): The solution to the problem
-        completion_time (int): The completion time of the schedule
+        makespan (int): The final makespan of the schedule
         max_makespan (int): The maximum makespan allowed for the schedule
 
     """
@@ -81,187 +76,173 @@ class JobShopSchedulingModel:
     ):
         self.model_data = model_data
         self.cqm = None
-        self.x = {}
-        self.y = {}
-        self.makespan = {}
-        self.best_sample = {}
+        self.nl_model = None
+
+        # CQM specifics
+        self._x = {}
+        self._y = {}
+        self._makespan_var = {}
+        self._best_sample_cqm = {}
+
+        # solution and makespan results
         self.solution = {}
-        self.completion_time = 0
-        self.max_makespan = max_makespan
-        if self.max_makespan is None:
-            self.max_makespan = generate_greedy_makespan(model_data) * greedy_multiplier
+        self.makespan = 0
+        self.max_makespan = max_makespan or generate_greedy_makespan(model_data) * greedy_multiplier
 
     def define_cqm_model(self) -> None:
         """Define CQM model."""
         self.cqm = ConstrainedQuadraticModel()
 
-    def define_variables(self, model_data: JobShopData) -> None:
-        """Define CQM variables.
+    def create_nl_model(self) -> None:
+        """Create NL model."""
+        self.nl_model = flow_shop_scheduling(processing_times=self.model_data.processing_times)
 
-        Args:
-            model_data: a JobShopData data class
-
-        Modifies:
-            self.x: a dictionary of integer variables for the start time of using machine i for job j
-            self.y: a dictionary of binary variables which equals to 1 if job j precedes job k on machine i
-            self.makespan: an integer variable for the makespan of the schedule
-        """
+    def define_cqm_variables(self) -> None:
+        """Define CQM variables."""
         # Define make span as an integer variable
-        self.makespan = Integer("makespan", lower_bound=0, upper_bound=self.max_makespan)
+        self._makespan_var = Integer("makespan", lower_bound=0, upper_bound=self.max_makespan)
 
         # Define integer variable for start time of using machine i for job j
-        self.x = {}
-        for job in model_data.jobs:
-            for resource in model_data.resources:
-                task = model_data.get_resource_job_tasks(job=job, resource=resource)
-                lb, ub = model_data.get_task_time_bounds(task, self.max_makespan)
-                self.x[(job, resource)] = Integer(
+        self._x = {}
+        for job in self.model_data.jobs:
+            for resource in self.model_data.resources:
+                task = self.model_data.get_resource_job_tasks(job=job, resource=resource)
+                lb, ub = self.model_data.get_task_time_bounds(task, self.max_makespan)
+                self._x[(job, resource)] = Integer(
                     "x{}_{}".format(job, resource), lower_bound=lb, upper_bound=ub
                 )
 
         # Add binary variable which equals to 1 if job j precedes job k on
         # machine i
-        self.y = {
+        self._y = {
             (j, k, i): Binary("y{}_{}_{}".format(j, k, i))
-            for j in model_data.jobs
-            for k in model_data.jobs
-            for i in model_data.resources
+            for j in self.model_data.jobs
+            for k in self.model_data.jobs
+            for i in self.model_data.resources
         }
 
-    def define_objective_function(self) -> None:
+    def define_cqm_objective(self) -> None:
         """Define objective function, which is to minimize
         the makespan of the schedule.
 
         Modifies:
             self.cqm: adds the objective function to the CQM model
         """
-        self.cqm.set_objective(self.makespan)
+        self.cqm.set_objective(self._makespan_var)
 
-    def add_precedence_constraints(self, model_data: JobShopData) -> None:
-        """Precedence constraints ensures that all operations of a job are
+    def add_precedence_constraints(self) -> None:
+        """Adds precedence constraints to the CQM.
+
+        Precedence constraints ensures that all operations of a job are
         executed in the given order.
-
-        Args:
-            model_data: a JobShopData data class
 
         Modifies:
             self.cqm: adds precedence constraints to the CQM model
         """
-        for job in model_data.jobs:  # job
+        for job in self.model_data.jobs:  # job
             for prev_task, curr_task in zip(
-                model_data.job_tasks[job][:-1], model_data.job_tasks[job][1:]
+                self.model_data.job_tasks[job][:-1], self.model_data.job_tasks[job][1:]
             ):
                 machine_curr = curr_task.resource
                 machine_prev = prev_task.resource
                 self.cqm.add_constraint(
-                    self.x[(job, machine_curr)] - self.x[(job, machine_prev)] >= prev_task.duration,
+                    self._x[(job, machine_curr)] - self._x[(job, machine_prev)] >= prev_task.duration,
                     label="pj{}_m{}".format(job, machine_curr),
                 )
 
+    def add_disjunctive_constraints(self) -> None:
+        """Adds disjunctive constraints to the CQM.
 
-    def add_disjunctive_constraints(self, model_data: JobShopData) -> None:
-        """This function adds the disjunctive constraints the prevent two jobs
+        This function adds the disjunctive constraints the prevent two jobs
         from being scheduled on the same machine at the same time. This is a
         non-quadratic alternative to the quadratic overlap constraint.
-
-        Args:
-            model_data (JobShopData): The data for the job shop scheduling
 
         Modifies:
             self.cqm: adds disjunctive constraints to the CQM model
         """
         V = self.max_makespan
-        for j in model_data.jobs:
-            for k in model_data.jobs:
+        for j in self.model_data.jobs:
+            for k in self.model_data.jobs:
                 if j < k:
-                    for i in model_data.resources:
-                        task_k = model_data.get_resource_job_tasks(job=k, resource=i)
+                    for i in self.model_data.resources:
+                        task_k = self.model_data.get_resource_job_tasks(job=k, resource=i)
                         self.cqm.add_constraint(
-                            self.x[(j, i)]
-                            - self.x[(k, i)]
+                            self._x[(j, i)]
+                            - self._x[(k, i)]
                             - task_k.duration
-                            + self.y[(j, k, i)] * V
+                            + self._y[(j, k, i)] * V
                             >= 0,
                             label="disjunction1{}_j{}_m{}".format(j, k, i),
                         )
 
-                        task_j = model_data.get_resource_job_tasks(job=j, resource=i)
+                        task_j = self.model_data.get_resource_job_tasks(job=j, resource=i)
                         self.cqm.add_constraint(
-                            self.x[(k, i)]
-                            - self.x[(j, i)]
+                            self._x[(k, i)]
+                            - self._x[(j, i)]
                             - task_j.duration
-                            + (1 - self.y[(j, k, i)]) * V
+                            + (1 - self._y[(j, k, i)]) * V
                             >= 0,
                             label="disjunction2{}_j{}_m{}".format(j, k, i),
                         )
 
-    def add_makespan_constraint(self, model_data: JobShopData) -> None:
-        """Ensures that the make span is at least the largest completion time of
-        the last operation of all jobs.
+    def add_makespan_constraint(self) -> None:
+        """Adds makespan constraints to the CQM.
 
-        Args:
-            model_data: a JobShopData data class
+        Ensures that the make span is at least the largest completion time of
+        the last operation of all jobs.
 
         Modifies:
             self.cqm: adds the makespan constraint to the CQM model
         """
-        for job in model_data.jobs:
-            last_job_task = model_data.job_tasks[job][-1]
+        for job in self.model_data.jobs:
+            last_job_task = self.model_data.job_tasks[job][-1]
             last_machine = last_job_task.resource
             self.cqm.add_constraint(
-                self.makespan - self.x[(job, last_machine)] >= last_job_task.duration,
+                self._makespan_var - self._x[(job, last_machine)] >= last_job_task.duration,
                 label="makespan_ctr{}".format(job),
             )
 
-    def call_cqm_solver(self, time_limit: int, model_data: JobShopData, profile: str) -> None:
+    def call_cqm_solver(self, time_limit: int, profile: str) -> None:
         """Calls CQM solver.
 
         Args:
             time_limit (int): time limit in second
-            model_data (JobShopData): a JobShopData data class
             profile (str): The profile variable to pass to the Sampler. Defaults to None.
             See documentation at
             https://docs.ocean.dwavesys.com/en/stable/docs_cloud/reference/generated/dwave.cloud.config.load_config.html#dwave.cloud.config.load_config
 
         Modifies:
-            self.feasible_sampleset: a SampleSet object containing the feasible solutions
-            self.best_sample: the best sample found by the CQM solver
             self.solution: the solution to the problem
-            self.completion_time: the completion time of the schedule
+            self.makespan: the final makespan of the schedule
         """
         sampler = LeapHybridCQMSampler(profile=profile)
         min_time_limit = sampler.min_time_limit(self.cqm)
         if time_limit is not None:
             time_limit = max(min_time_limit, time_limit)
         raw_sampleset = sampler.sample_cqm(self.cqm, time_limit=time_limit, label="Job Shop Demo")
-        self.feasible_sampleset = raw_sampleset.filter(lambda d: d.is_feasible)
-        num_feasible = len(self.feasible_sampleset)
+        feasible_sampleset = raw_sampleset.filter(lambda d: d.is_feasible)
+        num_feasible = len(feasible_sampleset)
         if num_feasible > 0:
-            best_samples = self.feasible_sampleset.truncate(min(10, num_feasible))
+            best_samples = feasible_sampleset.truncate(min(10, num_feasible))
         else:
             warnings.warn("Warning: CQM did not find feasible solution")
             best_samples = raw_sampleset.truncate(10)
 
-        print(" \n" + "=" * 30 + "BEST SAMPLE SET" + "=" * 30)
-        print(best_samples)
-
-        self.best_sample = best_samples.first.sample
+        self._best_sample_cqm = best_samples.first.sample
 
         self.solution = {
             (j, i): (
-                model_data.get_resource_job_tasks(job=j, resource=i),
-                self.best_sample[self.x[(j, i)].variables[0]],
-                model_data.get_resource_job_tasks(job=j, resource=i).duration,
+                self.model_data.get_resource_job_tasks(job=j, resource=i),
+                self._best_sample_cqm[self._x[(j, i)].variables[0]],
+                self.model_data.get_resource_job_tasks(job=j, resource=i).duration,
             )
-            for i in model_data.resources
-            for j in model_data.jobs
+            for i in self.model_data.resources
+            for j in self.model_data.jobs
         }
 
-        self.completion_time = self.best_sample["makespan"]
+        self.makespan = self._best_sample_cqm["makespan"]
 
-    def _calculate_end_times(
-            self, nl_model: dwave.optimization.Model, model_data: JobShopData
-        ) -> list[list[int]]:
+    def _calculate_end_times(self) -> list[list[int]]:
         """Calculate the end-times for the FSS job results.
 
         Helper function to calculate the end-times for the FSS job
@@ -270,18 +251,13 @@ class JobShopSchedulingModel:
 
         Update when symbol labels are supported.
 
-        Args:
-            nl_model (dwave.optimization.Model): the NL Solver model containing the results
-            model_data (JobShopData): a JobShopData data class
-
         Returns:
             list[list[int]]: end-times from the problem results
         """
-        times = model_data.processing_times
+        times = self.model_data.processing_times
         num_machines, num_jobs = len(times), len(times[0])
 
-        order = next(nl_model.iter_decisions()).state(0).astype(int)
-        print(order)
+        order = next(self.nl_model.iter_decisions()).state(0).astype(int)
 
         end_times = []
         for machine_m in range(num_machines):
@@ -315,24 +291,22 @@ class JobShopSchedulingModel:
 
         return end_times
 
-    def call_nl_solver(self, time_limit: int, model_data: JobShopData) -> None:
+    def call_nl_solver(self, time_limit: int) -> None:
         """Calls NL solver.
 
         Args:
             time_limit (int): time limit in second
-            model_data (JobShopData): a JobShopData data class
 
         Modifies:
             self.solution: the solution to the problem
         """
-        nl_model = flow_shop_scheduling(processing_times=model_data.processing_times)
-        _ = HSSNLSolver().solve(nl_model, time_limit=time_limit)
+        _ = HSSNLSolver().solve(self.nl_model, time_limit=time_limit)
 
-        end_times = self._calculate_end_times(nl_model, model_data)
+        end_times = self._calculate_end_times(self.nl_model)
 
         for machine_idx, machine_times in enumerate(end_times):
             for job_idx, end_time in enumerate(machine_times):
-                job = int(next(nl_model.iter_decisions()).state()[job_idx])
+                job = int(next(self.nl_model.iter_decisions()).state()[job_idx])
 
                 resource = self.model_data.resource_names[machine_idx]
                 task = self.model_data.get_resource_job_tasks(job=str(job), resource=resource)
@@ -396,7 +370,9 @@ def run_shop_scheduler(
         solver_time_limit (int, optional): Upperbound on how long the schedule can be; leave empty to
             auto-calculate an appropriate value. Defaults to None.
         use_scipy_solver (bool, optional): Whether to use the HiGHS via SciPy solver instead of the CQM solver.
-            Defaults to False.
+            Overridden by ``use_nl_solver`` if both are True. Defaults to False.
+        use_nl_solver (bool, optional): Whether to use the HiGHS via SciPy solver instead of the CQM solver.
+            Overrides the ``use_scipy_solver`` argument when both are True. Defaults to False.
         verbose (bool, optional): Whether to print verbose output. Defaults to False.
         out_sol_file (str, optional): Path to the output solution file. Defaults to None.
         out_plot_file (str, optional): Path to the output plot file. Defaults to None.
@@ -411,58 +387,34 @@ def run_shop_scheduler(
         Resource.
 
     """
-    model_building_start = time()
     model = JobShopSchedulingModel(
         model_data=job_data, max_makespan=max_makespan, greedy_multiplier=greedy_multiplier
     )
-    model.define_cqm_model()
-    model.define_variables(job_data)
-    model.add_precedence_constraints(job_data)
-
-    model.add_disjunctive_constraints(job_data)
-    model.add_makespan_constraint(job_data)
-    model.define_objective_function()
 
     if verbose:
         print_cqm_stats(model.cqm)
-    model_building_time = time() - model_building_start
-    solver_start_time = time()
 
-    if use_scipy_solver:
-        model.call_scipy_solver(time_limit=solver_time_limit)
-    elif use_nl_solver:
-        model.call_nl_solver(time_limit=solver_time_limit, model_data=job_data)
+    if use_nl_solver:
+        model.create_nl_model()
+        model.call_nl_solver(time_limit=solver_time_limit)
     else:
-        model.call_cqm_solver(time_limit=solver_time_limit, model_data=job_data, profile=profile)
-    solver_time = time() - solver_start_time
+        model.define_cqm_model()
+        model.define_cqm_variables()
 
-    if verbose:
-        print(" \n" + "=" * 55 + "SOLUTION RESULTS" + "=" * 55)
-        print(
-            tabulate(
-                [
-                    [
-                        "Completion Time",
-                        "Max Make-Span",
-                        "Model Building Time (s)",
-                        "Solver Call Time (s)",
-                        "Total Runtime (s)",
-                    ],
-                    [
-                        model.completion_time,
-                        model.max_makespan,
-                        int(model_building_time),
-                        int(solver_time),
-                        int(solver_time + model_building_time),
-                    ],
-                ],
-                headers="firstrow",
-            )
-        )
+        model.add_precedence_constraints()
+        model.add_disjunctive_constraints()
+        model.add_makespan_constraint()
+
+        model.define_cqm_objective()
+
+        if use_scipy_solver:
+            model.call_scipy_solver(time_limit=solver_time_limit)
+        else:
+            model.call_cqm_solver(time_limit=solver_time_limit, profile=profile)
 
     # Write solution to a file.
     if out_sol_file is not None:
-        write_solution_to_file(job_data, model.solution, model.completion_time, out_sol_file)
+        write_solution_to_file(job_data, model.solution, model.makespan, out_sol_file)
 
     # Plot solution
     if out_plot_file is not None:
@@ -515,6 +467,13 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "-m",
+        "--use_nl_solver",
+        action="store_false",
+        help="Whether to use the NL solver instead of the CQM solver",
+    )
+
+    parser.add_argument(
         "-v", "--verbose", action="store_true", default=True, help="Whether to print verbose output"
     )
 
@@ -543,6 +502,7 @@ if __name__ == "__main__":
     max_makespan = args.max_makespan
     profile = args.profile
     use_scipy_solver = args.use_scipy_solver
+    use_nl_solver = args.use_nl_solver
     verbose = args.verbose
 
     job_data = JobShopData()
@@ -553,6 +513,7 @@ if __name__ == "__main__":
         time_limit,
         verbose=verbose,
         use_scipy_solver=use_scipy_solver,
+        use_nl_solver=use_nl_solver,
         profile=profile,
         max_makespan=max_makespan,
         out_sol_file=out_sol_file,
