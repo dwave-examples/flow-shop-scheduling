@@ -286,7 +286,7 @@ def set_html(app):
                                                         html.Div(
                                                             [
                                                                 html.H3(
-                                                                    "D-Wave Hybrid Solver",
+                                                                    "Leap Hybrid Solver",
                                                                     className="gantt-title",
                                                                 ),
                                                                 html.Button(id="dwave-sort-button", children="Sort by start time", n_clicks=0),
