@@ -1,92 +1,50 @@
 [![Open in GitHub Codespaces](
   https://img.shields.io/badge/Open%20in%20GitHub%20Codespaces-333?logo=github)](
-  https://codespaces.new/dwave-examples/job-shop-scheduling-cqm?quickstart=1)
+  https://codespaces.new/dwave-examples/flow-shop-scheduling-nl?quickstart=1)
 [![Linux/Mac/Windows build status](
-  https://circleci.com/gh/dwave-examples/job-shop-scheduling-cqm.svg?style=shield)](
-  https://circleci.com/gh/dwave-examples/job-shop-scheduling-cqm)
+  https://circleci.com/gh/dwave-examples/flow-shop-scheduling-nl.svg?style=shield)](
+  https://circleci.com/gh/dwave-examples/flow-shop-scheduling-nl)
 
-# Job Shop Scheduling using CQM
-[Job shop scheduling](https://en.wikipedia.org/wiki/Job-shop_scheduling) is an optimization problem where the goal is to schedule jobs on a certain number of machines according to a process order for each job. The objective is to minimize the length of schedule also called make-span, or completion time of the last task of all jobs.
+# Flow Shop Scheduling
+[Job shop scheduling](https://en.wikipedia.org/wiki/Job-shop_scheduling) (JSS) is an optimization problem where the goal is to schedule jobs on a certain number of machines according to a process order for each job. The objective is to minimize the length of schedule also called make-span, or completion time of the last task of all jobs. [Flow shop scheduling](https://en.wikipedia.org/wiki/Flow-shop_scheduling) (FSS) is a contrained case of JSS where every job uses every machine in the exact same order. Often, for FSS problems, machines can instead be seen as sequential operations that need to be executed on each job rather than actual machines, as is the case in this particular demo.
 
-This example demonstrates a means of formulating and optimizing job shop  scheduling (JSS) using a [constrained quadratic model](https://docs.ocean.dwavesys.com/en/stable/concepts/cqm.html#cqm-sdk) (CQM) that can be solved using a Leap hybrid CQM solver. Contained in this example is the code for running the job shop scheduler as well as a user interface built with [Dash](https://dash.plotly.com/).
+![Demo Screenshot](_static/screenshot.png)
+
+This example demonstrates a means of formulating and optimizing FSS using a quantum hybrid solver --- either the NL Solver or a [constrained quadratic model](https://docs.ocean.dwavesys.com/en/stable/concepts/cqm.html#cqm-sdk) (CQM) that can be solved using a Leap hybrid CQM solver --- or a classical mixed-integer linear solver. Contained in this example is the code for running the scheduler either via the command line or using a visual interface built with [Dash](https://dash.plotly.com/).
 
 ## Usage
-To run the job shop demo with the user interface, from the command line enter
+To run the job shop demo with the visual interface, from the command line enter
 
     python app.py
 
 This will launch a local instance of the application on localhost. The default run location is http://127.0.0.1:8050/. Open the location in a web browser to view the application.
 
-To run the stand-alone job shop demo (without the user interace), use the command:
+To run the stand-alone flow shop demo (without the user interace), use the command:
 
     python job_shop_scheduler.py [-h] [-i INSTANCE] [-tl TIME_LIMIT] [-os OUTPUT_SOLUTION] [-op OUTPUT_PLOT] [-m] [-v] [-q] [-p PROFILE] [-mm MAX_MAKESPAN]
 
-This will call the job shop scheduling algorithm for the input instance file. Command line arguments are defined as:
+This will call the flow shop scheduling algorithm for the input instance file. Command line arguments are defined as:
 - -h (or --help): show this help message and exit
-- -i (--instance): path to the input instance file; (default: input/instance5_5.txt)
+- -i (--instance): path to the input instance file; see `app_configs.py` for instance names (default: input/tai20_5.txt)
 - -tl (--time_limit) time limit in seconds (default: None)
--  -os (--output_solution): path to the output solution file (default: output/solution.txt)
--  -op (--output_plot): path to the output plot file (default: output/schedule.png)
--  -m (--use_scipy_solver): Whether to use the HiGHS via SciPy solver instead of the CQM solver (default: False)
--  -v (--verbose): Whether to print verbose output (default: True)
--  -p (--profile): The profile variable to pass to the Sampler. Defaults to None. (default: None)
--  -mm (--max_makespan): Upperbound on how long the schedule can be; leave empty to auto-calculate an appropriate value. (default: None)
+- -os (--output_solution): path to the output solution file (default: output/solution.txt)
+- -op (--output_plot): path to the output plot file (default: output/schedule.png)
+- -m (--use_scipy_solver): Whether to use the HiGHS via SciPy solver instead of the CQM solver (default: True)
+- -m (--use_nl_solver): Whether to use the NL solver instead of the CQM solver (default: False)
+- -v (--verbose): Whether to print verbose output (default: True)
+- -p (--profile): The profile variable to pass to the Sampler. Defaults to None. (default: None)
+- -mm (--max_makespan): Upperbound on how long the schedule can be; leave empty to auto-calculate an appropriate value. (default: None)
 
-There are several instances pre-populated under `input` folder. Some of the instances were randomly generated using `utils/jss_generator.py` as discussed under the [Problem generator](#Generating-Problem-Instances) section.
+There are several instances pre-populated under `input` folder. Some of these instances are contained within the `flowshop1.txt` file, retrieved from the [OR-Library], and parsed when initializing the demo. These can be accessed as if they were files in the input folder named according to the instance short names in `flowshop1.txt` (e.g., "car2", "reC13") without any file ending. Other instances were pulled from [E. Taillard's list] of benchmarking instances. If the string "tai" is contained in the filename, the model will expect the input file to match the format used by Taillard.
 
-Other instances were pulled from [E. Taillard's list] of benchmarking instances. If the string "taillard" is contained in the filename, the model will expect the input file to match the format used by Taillard. Otherwise, the following format is expected:
+Note that, for a FSS problem:
+- tasks must be executed sequentially
+- each job has to perform every operation (use every machine) in a strict order
+- a contrained variant of the job-shop-scheduling problem is solved
 
-```
-#Num of jobs: 5
-#Num of machines: 5
-                task 0            task 1            task 2            task 3            task 4
-  job id    machine    dur    machine    dur    machine    dur    machine    dur    machine    dur
---------  ---------  -----  ---------  -----  ---------  -----  ---------  -----  ---------  -----
-       0          1      3          3      4          4      4          0      5          2      1
-       1          3      4          2      0          1      0          0      1          4      0
-       2          1      5          4      5          2      4          0      0          3      3
-       3          4      1          3      4          0      2          2      0          1      2
-       4          1      3          3      3          0      0          2      0          4      1
-
-```
-
-Note that:
-- tasks must be executed sequentially;
-- `dur` refers to the processing duration of a task;
-- this demo solves a variant of job-shop-scheduling problem
-
-The program produces a solution schedule like this:
-
-```
-#Number of jobs: 5
-#Number of machines: 5
-#Completion time: 22.0
-
-                  machine 0               machine 1               machine 2               machine 3               machine 4
-  job id    task    start    dur    task    start    dur    task    start    dur    task    start    dur    task    start    dur
---------  ------  -------  -----  ------  -------  -----  ------  -------  -----  ------  -------  -----  ------  -------  -----
-       0       3       16      5       0        5      3       4       21      1       1        8      4       2       12      4
-       1       3        6      1       2        5      0       1        4      0       0        0      4       4        9      0
-       2       3       17      0       0        0      5       2       13      4       4       17      3       1        6      5
-       3       2        9      2       4       19      2       3       14      0       1        4      4       0        1      1
-       4       2       18      0       0        9      3       3       21      0       1       14      3       4       21      1
-```
-
-The following graphic is an illustration of this solution.
+The following graphic is an plot of a solution for a 12 job x 5 resources FSS problem:
 
 ![Example Solution](_static/schedule.png)
-
-### Generating Problem Instances
-
-`utils/jss_generator.py` can be used to generate random problem instances.
-For example, a 5 * 6 instance with a maximum duration of 8 hours can be
-generated with:
-
-`python utils/jss_generator.py 5 6 8 -path < folder location to store generated instance file >`
-
-To see a full description of the options, type:
-
-`python utils/jss_generator.py -h`
 
 ## Model and Code Overview
 
@@ -165,3 +123,4 @@ Volume 73, 2016, Pages 165-173.
 Released under the Apache License 2.0. See [LICENSE](LICENSE) file.
 
 [E. Taillard's list]: http://mistic.heig-vd.ch/taillard/problemes.dir/ordonnancement.dir/ordonnancement.html
+[OR-Library]: https://people.brunel.ac.uk/~mastjjb/jeb/orlib/flowshopinfo.html
