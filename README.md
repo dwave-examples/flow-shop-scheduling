@@ -1,38 +1,35 @@
 [![Open in GitHub Codespaces](
   https://img.shields.io/badge/Open%20in%20GitHub%20Codespaces-333?logo=github)](
   https://codespaces.new/dwave-examples/flow-shop-scheduling-nl?quickstart=1)
-[![Linux/Mac/Windows build status](
-  https://circleci.com/gh/dwave-examples/flow-shop-scheduling-nl.svg?style=shield)](
-  https://circleci.com/gh/dwave-examples/flow-shop-scheduling-nl)
 
 # Flow Shop Scheduling
 [Job shop scheduling](https://en.wikipedia.org/wiki/Job-shop_scheduling) (JSS) is an optimization problem with the goal of scheduling, on a number of machines, jobs with diverse orderings of processing on the machines. The objective is to minimize the schedule length, also called "make-span," or completion time of the last task of all jobs. [Flow shop scheduling](https://en.wikipedia.org/wiki/Flow-shop_scheduling) (FSS) is a constrained case of JSS where every job uses every machine in the same order. The machines in FSS problems can often be seen as sequential operations to be executed on each job, as is the case in this particular demo.
 
 ![Demo Screenshot](_static/screenshot.png)
 
-This example demonstrates three ways of formulating and optimizing FSS: 
+This example demonstrates three ways of formulating and optimizing FSS:
 
-*    Formulating a 
-     [nonlinear model](https://docs.ocean.dwavesys.com/en/stable/concepts/nl_model.html) 
+*    Formulating a
+     [nonlinear model](https://docs.ocean.dwavesys.com/en/stable/concepts/nl_model.html)
      and solving on a Leap hybrid nonlinear-model solver
-*    Formulating a 
-     [constrained quadratic model](https://docs.ocean.dwavesys.com/en/stable/concepts/cqm.html) 
+*    Formulating a
+     [constrained quadratic model](https://docs.ocean.dwavesys.com/en/stable/concepts/cqm.html)
      (CQM) and solving on a Leap hybrid CQM solver
 *    Formulating a mixed-integer problem and solving on a classical mixed-integer linear solver
 
 This example lets you run the scheduler from either the command line or a visual interface built with [Dash](https://dash.plotly.com/).
 
 ## Usage
-Your development environment should be configured to 
+Your development environment should be configured to
 [access Leap’s Solvers](https://docs.ocean.dwavesys.com/en/stable/overview/sapi.html).
-You can see information about supported IDEs and authorizing access to your 
-Leap account [here](https://docs.dwavesys.com/docs/latest/doc_leap_dev_env.html).  
+You can see information about supported IDEs and authorizing access to your
+Leap account [here](https://docs.dwavesys.com/docs/latest/doc_leap_dev_env.html).
 
 To run the job shop demo with the visual interface, from the command line enter
 
     python app.py
 
-Access the user interface with your browser at http://127.0.0.1:8050/. 
+Access the user interface with your browser at http://127.0.0.1:8050/.
 
 To run the flow shop scheduler without the Dash interface, from the command line enter
 
@@ -49,6 +46,8 @@ This calls the FSS algorithm for the input file. Command line arguments are as f
 - -v (--verbose): print verbose output (default: True)
 - -p (--profile): profile variable to pass to the sampler (default: None)
 - -mm (--max_makespan): manually set an upper-bound on the schedule length instead of auto-calculating (default: None)
+
+### Problem Instances
 
 There are several instances pre-populated under `input` folder. Some of these instances are contained within the `flowshop1.txt` file, retrieved from the [OR-Library], and parsed when initializing the demo. These can be accessed as if they were files in the input folder named according to the instance short names in `flowshop1.txt` (e.g., "car2", "reC13") without any file ending. Other instances were pulled from [E. Taillard's list] of benchmarking instances. If the string "tai" is contained in the filename, the model will expect the input file to match the format used by Taillard.
 
