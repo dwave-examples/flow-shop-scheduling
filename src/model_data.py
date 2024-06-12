@@ -230,7 +230,7 @@ class JobShopData:
             ValueError: if the resource or job is not in the dataset
         """
         if resource not in self._resources:
-            raise ValueError(f"Resource {resource} not in dataset")
+            raise ValueError(f"Operation {resource} not in dataset")
 
         if job not in self._jobs:
             raise ValueError(f"Job {job} not in dataset")

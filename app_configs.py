@@ -32,8 +32,9 @@ THUMBNAIL = "assets/dwave_logo.svg"
 APP_TITLE = "FSS Demo"
 MAIN_HEADER = "Flow Shop Scheduling"
 DESCRIPTION = """\
-Run the flow shop scheduling problem for several different scenarios.
-Explore the Gantt Chart for solution details.
+Run the cargo-loading themed flow shop scheduling (FSS) problem for several
+different scenarios. Each job must execute, in order, all operations listed
+on the right.
 """
 
 CLASSICAL_TAB_LABEL = "Classical Results"
