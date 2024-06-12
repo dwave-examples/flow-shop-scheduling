@@ -91,7 +91,7 @@ def generate_control_card() -> html.Div:
         id="control-card",
         children=[
             dropdown(
-                "Scenario (jobs x resources)",
+                "Scenario (jobs x operations)",
                 "scenario-select",
                 scenario_options,
             ),
@@ -176,7 +176,7 @@ def problem_details(solver: str) -> html.Div:
                                                 [
                                                     html.Td("Number of Jobs"),
                                                     html.Td(id=f"{solver}-stats-jobs"),
-                                                    html.Td("Number of Resources"),
+                                                    html.Td("Number of Operations"),
                                                     html.Td(id=f"{solver}-stats-resources"),
                                                 ]
                                             ),
@@ -251,7 +251,7 @@ def set_html(app):
                                                     className="gantt-chart-card",
                                                     children=[
                                                         html.H3(
-                                                            "Unscheduled Jobs and Resources",
+                                                            "Unscheduled Jobs and Operations",
                                                             className="gantt-title",
                                                         ),
                                                         dcc.Loading(
@@ -261,6 +261,7 @@ def set_html(app):
                                                                     className="gantt-div",
                                                                     id="unscheduled-gantt-chart",
                                                                     responsive=True,
+                                                                    config={"displayModeBar": False},
                                                                 ),
                                                             ],
                                                         ),
@@ -298,11 +299,13 @@ def set_html(app):
                                                                     id="optimized-gantt-chart-jobsort",
                                                                     responsive=True,
                                                                     className="gantt-div",
+                                                                    config={"displayModeBar": False},
                                                                 ),
                                                                 dcc.Graph(
                                                                     id="optimized-gantt-chart-startsort",
                                                                     responsive=True,
                                                                     className="display-none",
+                                                                    config={"displayModeBar": False},
                                                                 ),
                                                             ],
                                                         ),
@@ -353,11 +356,13 @@ def set_html(app):
                                                                     id="highs-gantt-chart-jobsort",
                                                                     responsive=True,
                                                                     className="gantt-div",
+                                                                    config={"displayModeBar": False},
                                                                 ),
                                                                 dcc.Graph(
                                                                     id="highs-gantt-chart-startsort",
                                                                     responsive=True,
                                                                     className="display-none",
+                                                                    config={"displayModeBar": False},
                                                                 ),
                                                             ]
                                                         ),

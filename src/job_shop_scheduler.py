@@ -302,7 +302,7 @@ class JobShopSchedulingModel:
         """
         _ = HSSNLSolver().solve(self.nl_model, time_limit=time_limit)
 
-        end_times = self._calculate_end_times(self.nl_model)
+        end_times = self._calculate_end_times()
 
         for machine_idx, machine_times in enumerate(end_times):
             for job_idx, end_time in enumerate(machine_times):
@@ -346,7 +346,7 @@ class JobShopSchedulingModel:
         df_rows = []
         for (j, i), (task, start, dur) in self.solution.items():
             df_rows.append([j, task, start, start + dur, i])
-        df = pd.DataFrame(df_rows, columns=["Job", "Task", "Start", "Finish", "Resource"])
+        df = pd.DataFrame(df_rows, columns=["Job", "Task", "Start", "Finish", "Operation"])
         return df
 
 
@@ -384,7 +384,7 @@ def run_shop_scheduler(
 
     Returns:
         pd.DataFrame: A DataFrame that has the following columns: Task, Start, Finish, and
-        Resource.
+        Operation.
 
     """
     model = JobShopSchedulingModel(
@@ -438,7 +438,7 @@ if __name__ == "__main__":
         "--instance",
         type=str,
         help="path to the input instance file; ",
-        default="input/instance5_5.txt",
+        default="input/tai20_5.txt",
     )
 
     parser.add_argument("-tl", "--time_limit", type=int, help="time limit in seconds", default=10)

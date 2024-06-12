@@ -24,7 +24,7 @@ background_callback_manager = DiskcacheManager(cache)
 from src.model_data import JobShopData
 
 Y_AXIS_LABEL = "Job"
-COLOR_LABEL = "Resource"  # must be resource label
+COLOR_LABEL = "Operation"  # must be operation label
 
 
 def get_minimum_task_times(job_shop_data: JobShopData) -> pd.DataFrame:
@@ -37,7 +37,7 @@ def get_minimum_task_times(job_shop_data: JobShopData) -> pd.DataFrame:
 
     Returns:
         pd.DataFrame: A DataFrame of the jobs to be scheduled including Task, Start, Finish,
-        Resource, and delta.
+        Operation, and delta.
     """
     task_data = []
     for tasks in job_shop_data.job_tasks.values():
