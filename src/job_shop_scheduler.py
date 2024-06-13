@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import argparse
 import sys
-from typing import TYPE_CHECKING
 import warnings
 
 import pandas as pd
@@ -23,9 +22,6 @@ from utils.utils import print_cqm_stats, write_solution_to_file
 
 from nlsolver import HSSNLSolver
 from dwave.optimization.generators import flow_shop_scheduling
-
-if TYPE_CHECKING:
-    import dwave.optimization
 
 
 def generate_greedy_makespan(job_data: JobShopData, num_samples: int = 100) -> int:
@@ -255,36 +251,35 @@ class JobShopSchedulingModel:
             list[list[int]]: end-times from the problem results
         """
         times = self.model_data.processing_times
-        num_machines, num_jobs = len(times), len(times[0])
 
         order = next(self.nl_model.iter_decisions()).state(0).astype(int)
 
         end_times = []
-        for machine_m in range(num_machines):
+        for machine_m, _ in enumerate(times):
 
             machine_m_times = []
             if machine_m == 0:
 
-                for job_j in range(num_jobs):
+                for job_j, order_j in enumerate(order):
 
                     if job_j == 0:
-                        machine_m_times.append(times[machine_m, :][order[job_j]])
+                        machine_m_times.append(times[machine_m, :][order_j])
                     else:
-                        end_job_j = times[machine_m, :][order[job_j]]
+                        end_job_j = times[machine_m, :][order_j]
                         end_job_j += machine_m_times[-1]
                         machine_m_times.append(end_job_j)
 
             else:
 
-                for job_j in range(num_jobs):
+                for job_j, order_j in enumerate(order):
 
                     if job_j == 0:
                         end_job_j = end_times[machine_m - 1][job_j]
-                        end_job_j += times[machine_m, :][order[job_j]]
+                        end_job_j += times[machine_m, :][order_j]
                         machine_m_times.append(end_job_j)
                     else:
                         end_job_j = max(end_times[machine_m - 1][job_j], machine_m_times[-1])
-                        end_job_j += times[machine_m, :][order[job_j]]
+                        end_job_j += times[machine_m, :][order_j]
                         machine_m_times.append(end_job_j)
 
             end_times.append(machine_m_times)

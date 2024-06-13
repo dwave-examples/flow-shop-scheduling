@@ -160,24 +160,24 @@ def problem_details(solver: str) -> html.Div:
                                                 [
                                                     html.Td("Scenario"),
                                                     html.Td(id=f"{solver}-stats-scenario"),
-                                                    html.Td("Solver Time Limit [s]"),
-                                                    html.Td(id=f"{solver}-stats-time-limit"),
-                                                ]
-                                            ),
-                                            html.Tr(
-                                                [
                                                     html.Td("Solver"),
                                                     html.Td(id=f"{solver}-stats-solver"),
-                                                    html.Td("Wall Clock Time [s]"),
-                                                    html.Td(id=f"{solver}-stats-wall-clock-time"),
                                                 ]
                                             ),
                                             html.Tr(
                                                 [
                                                     html.Td("Number of Jobs"),
                                                     html.Td(id=f"{solver}-stats-jobs"),
+                                                    html.Td("Solver Time Limit [s]"),
+                                                    html.Td(id=f"{solver}-stats-time-limit"),
+                                                ]
+                                            ),
+                                            html.Tr(
+                                                [
                                                     html.Td("Number of Operations"),
                                                     html.Td(id=f"{solver}-stats-resources"),
+                                                    html.Td("Wall Clock Time [s]"),
+                                                    html.Td(id=f"{solver}-stats-wall-clock-time"),
                                                 ]
                                             ),
                                         ],
@@ -289,20 +289,20 @@ def set_html(app):
                                                                     "D-Wave Hybrid Solver",
                                                                     className="gantt-title",
                                                                 ),
-                                                                html.Button(id="dwave-sort-button", children="Sort by start time", n_clicks=0),
+                                                                html.Button(id={"type": "sort-button", "index": 0}, children="Sort by start time", n_clicks=0),
                                                             ],
                                                             className="gantt-heading-button",
                                                         ),
                                                         html.Div(
                                                             [
                                                                 dcc.Graph(
-                                                                    id="optimized-gantt-chart-jobsort",
+                                                                    id={"type": "gantt-chart-jobsort", "index": 0},
                                                                     responsive=True,
                                                                     className="gantt-div",
                                                                     config={"displayModeBar": False},
                                                                 ),
                                                                 dcc.Graph(
-                                                                    id="optimized-gantt-chart-startsort",
+                                                                    id={"type": "gantt-chart-startsort", "index": 0},
                                                                     responsive=True,
                                                                     className="display-none",
                                                                     config={"displayModeBar": False},
@@ -346,20 +346,20 @@ def set_html(app):
                                                                     "HiGHS Classical Solver",
                                                                     className="gantt-title",
                                                                 ),
-                                                                html.Button(id="highs-sort-button", children="Sort by start time", n_clicks=0),
+                                                                html.Button(id={"type": "sort-button", "index": 1}, children="Sort by start time", n_clicks=0),
                                                             ],
                                                             className="gantt-heading-button",
                                                         ),
                                                         html.Div(
                                                             [
                                                                 dcc.Graph(
-                                                                    id="highs-gantt-chart-jobsort",
+                                                                    id={"type": "gantt-chart-jobsort", "index": 1},
                                                                     responsive=True,
                                                                     className="gantt-div",
                                                                     config={"displayModeBar": False},
                                                                 ),
                                                                 dcc.Graph(
-                                                                    id="highs-gantt-chart-startsort",
+                                                                    id={"type": "gantt-chart-startsort", "index": 1},
                                                                     responsive=True,
                                                                     className="display-none",
                                                                     config={"displayModeBar": False},

@@ -124,16 +124,14 @@ def generate_gantt_chart(df: pd.DataFrame = None, sort_by: str = "JobInt",) -> g
     df = df.sort_values(by=[sort_by], ascending=False)
     df = df.drop(columns=["JobInt"])
 
-    sorted_labels = sorted(df[COLOR_LABEL].unique(), key=lambda v: int(v.split(".")[0]))
-
     fig = px.timeline(
         df,
         x_start="Start",
         x_end="Finish",
         y=Y_AXIS_LABEL,
         color=COLOR_LABEL,
-        color_discrete_sequence=[color_map[label] for label in sorted_labels],
-        category_orders={COLOR_LABEL: sorted_labels}
+        color_discrete_sequence=[color_map[label] for label in color_labels],
+        category_orders={COLOR_LABEL: color_labels}
     )
 
     for index, data in enumerate(fig.data):

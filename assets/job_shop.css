@@ -86,24 +86,6 @@ h1, h2, h3, h4, h5, h6, td, th, span, a, p, label {
     font-family: "Helvetica Neue", sans-serif;
 }
 
-td {
-    color: var(--grey-dark);
-    background-color: white;
-}
-
-th, td {
-    padding: 0.5rem 1rem;
-    text-align: right;
-}
-
-th:first-child, td:first-child {
-    padding-left: 1.2rem;
-}
-
-th:last-child, td:last-child {
-    padding-right: 1.2rem;
-}
-
 h1, h2, h3, h4, h5, h6 {
     color: var(--theme);
     font-weight: 400;
@@ -152,6 +134,24 @@ label {
 
 input[type="checkbox"] {
     margin: 0 1rem 0 0;
+}
+
+td {
+    color: var(--grey-dark);
+    background-color: white;
+}
+
+th, td {
+    padding: 0.5rem 1rem;
+    text-align: right;
+}
+
+th:first-child, td:first-child {
+    padding-left: 1.2rem;
+}
+
+th:last-child, td:last-child {
+    padding-right: 1.2rem;
 }
 
 #app-container {
@@ -418,11 +418,7 @@ div.tab.tab--disabled {
     margin-right: 4rem;
 }
 
-#highs-stats-make-span {
-    font-size: 2.5rem;
-    font-weight: 400;
-}
-
+#highs-stats-make-span,
 #dwave-stats-make-span {
     font-size: 2rem;
     font-weight: 400;

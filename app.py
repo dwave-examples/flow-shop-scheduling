@@ -257,69 +257,35 @@ def update_button_visibility(running_dwave: bool, running_classical: bool) -> tu
 
 
 @app.callback(
-    Output("optimized-gantt-chart-jobsort", "className"),
-    Output("optimized-gantt-chart-startsort", "className"),
-    Output("dwave-sort-button", "children"),
+    Output({"type": "gantt-chart-jobsort", "index": MATCH}, "className"),
+    Output({"type": "gantt-chart-startsort", "index": MATCH}, "className"),
+    Output({"type": "sort-button", "index": MATCH}, "children"),
     inputs=[
-        Input("dwave-sort-button", "n_clicks"),
-        State("dwave-sort-button", "children"),
+        Input({"type": "sort-button", "index": MATCH}, "n_clicks"),
+        State({"type": "sort-button", "index": MATCH}, "children"),
     ],
     prevent_initial_call=True,
 )
-def switch_optimized_gantt_chart(new_click: int, sort_button_text: str) -> tuple[str, str, str]:
-    """Switch between the hybrid results plot sorted by job or by start time.
+def switch_gantt_chart(new_click: int, sort_button_text: str) -> tuple[str, str, str]:
+    """Switch between the results plot sorted by job or by start time.
 
     Args:
         new_click (int): The number of times the sort button has been clicked.
         sort_button_text: The text in the sort button (indicating how to sort the plot).
 
     Return:
-        str: The hybrid results class name sorted by job (whether hidden or displayed).
-        str: The hybrid results class name sorted by start time (whether hidden or displayed).
+        str: The results class name sorted by job (whether hidden or displayed).
+        str: The results class name sorted by start time (whether hidden or displayed).
         str: The new text of the sort button.
     """
-    if ctx.triggered_id != "dwave-sort-button" or new_click == 0:
-        raise PreventUpdate
-
     if sort_button_text == "Sort by start time":
         return "display-none", "gantt-div", "Sort by job"
     return "gantt-div", "display-none", "Sort by start time"
 
 
 @app.callback(
-    Output("highs-gantt-chart-jobsort", "className"),
-    Output("highs-gantt-chart-startsort", "className"),
-    Output("highs-sort-button", "children"),
-    inputs=[
-        Input("highs-sort-button", "n_clicks"),
-        State("highs-sort-button", "children"),
-    ],
-    prevent_initial_call=True,
-)
-def switch_highs_gantt_chart(new_click: int, sort_button_text: str) -> tuple[str, str, str]:
-    """Switch between the classical results plot sorted by job or by start time.
-
-    Args:
-        new_click (int): The number of times the sort button has been clicked.
-        sort_button_text: The text in the sort button (indicating how to sort the plot).
-
-    Return:
-        str: The classical results class name sorted by job (whether hidden or displayed).
-        str: The classical results class name sorted by start time (whether hidden or displayed).
-        str: The new text of the sort button.
-    """
-    if ctx.triggered_id != "highs-sort-button" or new_click == 0:
-        raise PreventUpdate
-
-    if sort_button_text == "Sort by start time":
-        return "display-none", "gantt-div", "Sort by job"
-    return "gantt-div", "display-none", "Sort by start time"
-
-
-
-@app.callback(
-    Output("optimized-gantt-chart-jobsort", "figure"),
-    Output("optimized-gantt-chart-startsort", "figure"),
+    Output({"type": "gantt-chart-jobsort", "index": 0}, "figure"),
+    Output({"type": "gantt-chart-startsort", "index": 0}, "figure"),
     Output("dwave-stats-make-span", "children"),
     Output("dwave-stats-time-limit", "children"),
     Output("dwave-stats-wall-clock-time", "children"),
@@ -403,8 +369,8 @@ def run_optimization_hybrid(
 
 
 @app.callback(
-    Output("highs-gantt-chart-jobsort", "figure"),
-    Output("highs-gantt-chart-startsort", "figure"),
+    Output({"type": "gantt-chart-jobsort", "index": 1}, "figure"),
+    Output({"type": "gantt-chart-startsort", "index": 1}, "figure"),
     Output("highs-stats-make-span", "children"),
     Output("highs-stats-time-limit", "children"),
     Output("highs-stats-wall-clock-time", "children"),
