@@ -25,7 +25,7 @@ Your development environment should be configured to
 You can see information about supported IDEs and authorizing access to your
 Leap account [here](https://docs.dwavesys.com/docs/latest/doc_leap_dev_env.html).
 
-To run the job shop demo with the visual interface, from the command line enter
+To run the flow shop demo with the visual interface, from the command line enter
 
     python app.py
 
@@ -51,9 +51,6 @@ This calls the FSS algorithm for the input file. Command line arguments are as f
 
 There are several instances pre-populated under `input` folder. Some of these instances are contained within the `flowshop1.txt` file, retrieved from the [OR-Library], and parsed when initializing the demo. These can be accessed as if they were files in the input folder named according to the instance short names in `flowshop1.txt` (e.g., "car2", "reC13") without any file ending. Other instances were pulled from [E. Taillard's list] of benchmarking instances. If the string "tai" is contained in the filename, the model will expect the input file to match the format used by Taillard.
 
-
-
-
 ## Model and Code Overview
 
 ### Problem Parameters
@@ -62,9 +59,9 @@ These are the parameters of the problem:
 
 - `n` : is the number of jobs
 - `m` : is the number of machines
-- `J` : is the set of jobs (`{0,1,2,...,n}`)
-- `M` : is the set of machines (`{0,1,2,...,m}`)
-- `T` : is the set of tasks (`{0,1,2,...,m}`) that has same dimension as `M`.
+- `J` : is the set of jobs (`{0,1,2,...,n-1}`)
+- `M` : is the set of machines (`{0,1,2,...,m-1}`)
+- `T` : is the set of tasks (`{0,1,2,...,m-1}`) that has same dimension as `M`.
 - `M_(j,t)`:  is the machine that processes task `t` of job `j`
 - `T_(j,i)`  : is the task that is processed by machine `i` for job `j`
 - `D_(j,t)`:  is the processing duration that task `t` needs for job `j`
@@ -80,9 +77,24 @@ of the JSS
 
 ### Objective
 
-Our objective is to minimize the make-span (`w`) of the given JSS problem.
+Our objective is to minimize the make-span (`w`) of the given FSS problem.
 
-### Constraints
+### NL Solver Model
+
+The NL Solver constructs the problem using only the job order for the machines. The first machine
+can perform its operation on each job sequentially in the prescribed order, without any delay. The
+second machine can then perform each job sequentially in the same order (as required by the flow
+shop formulation) where, if a specific machine is already busy with another task, it will have to
+wait until that task is done.
+
+![fss_example](_static/fss_example.png)
+
+This is done by using the `max` operation to extract the start time for each job, making sure that there's no overlap between jobs on different machines. No added constraints are necessary.
+
+### Constraint Quadratic Model (CQM)
+For the CQM we need to add a set of constraints that make sure that the tasks are executed in order
+and that any single machine is not used by two different jobs at the sames time.
+
 #### Precedence Constraint
 
 Our first constraint, [equation 1](#eq2), enforces the precedence constraint.
