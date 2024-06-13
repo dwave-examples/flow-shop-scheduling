@@ -188,7 +188,7 @@ class JobShopSchedulingModel:
     def add_makespan_constraint(self) -> None:
         """Adds makespan constraints to the CQM.
 
-        Ensures that the make span is at least the largest completion time of
+        Ensures that the makespan is at least the largest completion time of
         the last operation of all jobs.
 
         Modifies:
@@ -295,7 +295,7 @@ class JobShopSchedulingModel:
         """Calls NL solver.
 
         Args:
-            time_limit (int): time limit in second
+            time_limit (int): time limit in seconds
 
         Modifies:
             self.solution: the solution to the problem
@@ -313,11 +313,11 @@ class JobShopSchedulingModel:
                 self.solution[(str(job), resource)] = task, end_time - task.duration, task.duration
 
     def call_scipy_solver(self, time_limit: int = 100):
-        """This function calls the HiGHS via SciPy and returns the solution
+        """This function calls the HiGHS via SciPy solver and returns the solution
 
         Args:
             time_limit (int, optional): The maximum amount of time to
-            allow the HiGHS solver to before returning. Defaults to 100.
+            allow the HiGHS solver to run before returning. Defaults to 100.
 
         Modifies:
             self.solution: the solution to the problem

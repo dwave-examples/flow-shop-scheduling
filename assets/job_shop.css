@@ -146,10 +146,6 @@ label {
     display: flex;
 }
 
-#solver-select.hide-classic-and-nl label:nth-last-child(-n+2) {
-    display: none !important;
-}
-
 #solver-select.hide-cqm label:first-child {
     display: none !important;
 }
@@ -230,7 +226,7 @@ input[type="checkbox"] {
     height: 100%;
 }
 
-.gantt-chart-card > div{
+.gantt-chart-card > div {
     height: 100%;
 }
 
@@ -374,15 +370,12 @@ div.tab.tab--disabled {
 
 #solution-stats-table th {
     text-align: center;
-    /* border-right: 1px solid var(--grey-light); */
     background-color: var(--grey-lighter);
     width: 20rem;
     font-size: 1.8rem;
 }
-#solution-stats-table th:nth-child(2n+1) {
-    text-align: left;
-}
 
+#solution-stats-table th:nth-child(2n+1),
 #solution-stats-table td:nth-child(2n+1) {
     text-align: left;
 }
@@ -431,7 +424,7 @@ div.tab.tab--disabled {
 }
 
 #dwave-stats-make-span {
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: 400;
 }
 
@@ -477,4 +470,8 @@ div.tab.tab--disabled {
 
 .collapsed .details-to-collapse {
     height: 0;
+}
+
+hr {
+    margin: 1rem 0;
 }

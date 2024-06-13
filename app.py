@@ -133,7 +133,7 @@ def update_solvers_selected(
 
     Args:
         selected_solvers (list[int]): Currently selected solvers.
-        list: List of solver checkbox options.
+        solver_options (list[dict]): List of solver checkbox options.
 
     Returns:
         list: Updated list of solver checkbox options.
@@ -341,7 +341,7 @@ def switch_highs_gantt_chart(new_click: int, sort_button_text: str) -> tuple[str
     cancel=[Input("cancel-button", "n_clicks")],
     prevent_initial_call=True,
 )
-def run_optimization_cqm(
+def run_optimization_hybrid(
     run_click: int, solvers: list[int], scenario: str, time_limit: int
 ) -> tuple[go.Figure, go.Figure, str, str, str, str, str, str, str, str, str, bool, bool]:
     """Runs optimization using the D-Wave hybrid solver.
@@ -382,7 +382,7 @@ def run_optimization_cqm(
     results = run_shop_scheduler(
         model_data,
         use_scipy_solver=False,
-        use_nl_solver=True if SamplerType.NL.value in solvers else False,
+        use_nl_solver=SamplerType.NL.value in solvers,
         solver_time_limit=time_limit,
     )
 
