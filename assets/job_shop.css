@@ -363,24 +363,24 @@ div.tab.tab--disabled {
     margin-bottom: 20px;
 }
 
-#solution-stats-table {
+.solution-stats-table {
     font-size: 1.5rem;
     border: 1px solid var(--grey-light);
 }
 
-#solution-stats-table th {
+.solution-stats-table th {
     text-align: center;
     background-color: var(--grey-lighter);
     width: 20rem;
     font-size: 1.8rem;
 }
 
-#solution-stats-table th:nth-child(2n+1),
-#solution-stats-table td:nth-child(2n+1) {
+.solution-stats-table th:nth-child(2n+1),
+.solution-stats-table td:nth-child(2n+1) {
     text-align: left;
 }
 
-#solution-stats-table td:nth-child(2n) {
+.solution-stats-table td:nth-child(2n) {
     border-right: 1px solid var(--grey-light);
 }
 
