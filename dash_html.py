@@ -151,10 +151,9 @@ def problem_details(solver: str) -> html.Div:
                         className="details-to-collapse",
                         children=[
                             html.Table(
-                                id="solution-stats-table",
+                                className="solution-stats-table",
                                 children=[
                                     html.Tbody(
-                                        id="problem-details",
                                         children=[
                                             html.Tr(
                                                 [

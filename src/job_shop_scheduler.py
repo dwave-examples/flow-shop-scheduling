@@ -11,7 +11,7 @@ import warnings
 
 import pandas as pd
 from dimod import Binary, ConstrainedQuadraticModel, Integer
-from dwave.system import LeapHybridCQMSampler
+from dwave.system import LeapHybridCQMSampler, LeapHybridNLSampler
 
 sys.path.append("./src")
 import utils.scipy_solver as scipy_solver
@@ -20,7 +20,6 @@ from model_data import JobShopData
 from utils.greedy import GreedyJobShop
 from utils.utils import print_cqm_stats, write_solution_to_file
 
-from nlsolver import HSSNLSolver
 from dwave.optimization.generators import flow_shop_scheduling
 
 
@@ -295,7 +294,8 @@ class JobShopSchedulingModel:
         Modifies:
             self.solution: the solution to the problem
         """
-        _ = HSSNLSolver().solve(self.nl_model, time_limit=time_limit)
+        sampler = LeapHybridNLSampler()
+        sampler.sample(self.nl_model, time_limit=time_limit, label="FSS demo")
 
         end_times = self._calculate_end_times()
 
