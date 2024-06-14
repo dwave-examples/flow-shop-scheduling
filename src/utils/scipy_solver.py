@@ -50,7 +50,7 @@ class SciPyCQMSolver:
             # Create the LinearConstraint.
             # We save A as a csr matrix to save on a bit of memory
             yield scipy.optimize.LinearConstraint(
-                scipy.sparse.csr_array(A), lb=lb, ub=ub)
+                scipy.sparse.csr_array([A]), lb=lb, ub=ub)
 
     @staticmethod
     def sample_cqm(cqm: dimod.ConstrainedQuadraticModel,
