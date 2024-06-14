@@ -81,18 +81,29 @@ The objective is to minimize the make-span (`w`) of the given FSS problem.
 
 ### Nonlinear Model
 
-The NL Solver constructs the problem using only the job order for the machines. The first machine
-can perform its operation on each job sequentially in the prescribed order, without any delay. The
-second machine can then perform each job sequentially in the same order (as required by the flow
-shop formulation) where, if a specific machine is already busy with another task, it will have to
-wait until that task is done.
+The nonlinear model represents the problem using only the job order for the machines.
+This is sufficient to construct all feasible compact solutions. The model uses Ocean's
+[dwave-optimization](https://docs.ocean.dwavesys.com/en/stable/docs_optimization/sdk_index.html)
+package's ``ListVariable`` to efficiently permutate the order of jobs to be minimized.
 
-![fss_example](_static/fss_example.png)
+Typically, solver performance strongly depends on the size of the solution space for the modeled
+problem: models with smaller spaces of feasible solutions tend to perform better than ones with
+larger spaces. A powerful way to reduce the feasible-solutions space is by using variables that act
+as implicit constraints, such as the ``ListVariable`` symbol used here, where the order of jobs is a
+permutation of values. The ``max`` operation is used to extract the start time for each job, making
+sure that there's no overlap between jobs on different machines. No other constraints are necessary.
 
-This is done by using the `max` operation to extract the start time for each job, making sure that there's no overlap between jobs on different machines. No added constraints are necessary.
+As can be seen in the two example images below, switching the job order can improve the solution
+quality, corresponding to a lowering of the completion time, or the makespan, for the FSS problem.
 
-### Constraint Quadratic Model 
-The constrained quadratic model (CQM) requires adding a set of constraints to ensure that tasks 
+![fss_example0](_static/fss_example0.png)
+Above: a solution to a flow shop scheduling problem with 3 jobs on 3 machines.
+
+![fss_example1](_static/fss_example1.png)
+Above: an improved solution to the same problem with a permutated job order.
+
+### Constraint Quadratic Model
+The constrained quadratic model (CQM) requires adding a set of constraints to ensure that tasks
 are executed in order and that no single machine is used by different jobs at the same time.
 
 #### Precedence Constraint
