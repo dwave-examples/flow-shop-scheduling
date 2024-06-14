@@ -1,8 +1,16 @@
+from __future__ import annotations
+
 import sys
+from pathlib import Path
 from collections.abc import Iterable
+from typing import TYPE_CHECKING, Union
 
 sys.path.append("./src")
-from utils.utils import read_instance, read_taillard_instance
+from app_configs import RESOURCE_NAMES
+from utils.utils import read_or_library_instance, read_taillard_instance
+
+if TYPE_CHECKING:
+    from numpy.typing import array_like
 
 
 class Task:
@@ -45,6 +53,19 @@ class JobShopData:
         self._jobs = set(jobs)
         self._resources = set(resources)
         self._job_tasks = {job: [] for job in jobs}
+        self._processing_times = None
+        self._resource_names = None
+
+    @property
+    def processing_times(self) -> array_like:
+        """Returns the processing times for the problem.
+
+        Returns:
+            array_like: Processing times, as an :math:`n \times m` |array-like|_ of
+            integers, where ``processing_times[n, m]`` is the time job
+            `n` is on machine `m`.
+        """
+        return self._processing_times
 
     @property
     def jobs(self) -> Iterable[str]:
@@ -63,6 +84,16 @@ class JobShopData:
             Iterable[str]: The resources in the data.
         """
         return self._resources
+
+    @property
+    def resource_names(self) -> Iterable[str, int]:
+        """Returns the resource names used.
+
+        Returns:
+            Iterable[str, int]: The resource names or machine indices used.
+        """
+        return self._resource_names or list(range(len(self.processing_times)))
+
 
     @property
     def job_tasks(self) -> dict:
@@ -108,7 +139,7 @@ class JobShopData:
         """
         self._resources.add(resource)
 
-    def add_task(self, resource: str, job: str, duration: int, position: int = None) -> None:
+    def add_task_from_data(self, resource: str, job: str, duration: int, position: int = None) -> None:
         """Adds a task to the dataset.
 
         Args:
@@ -199,7 +230,7 @@ class JobShopData:
             ValueError: if the resource or job is not in the dataset
         """
         if resource not in self._resources:
-            raise ValueError(f"Resource {resource} not in dataset")
+            raise ValueError(f"Operation {resource} not in dataset")
 
         if job not in self._jobs:
             raise ValueError(f"Job {job} not in dataset")
@@ -288,47 +319,19 @@ class JobShopData:
             if task.resource == resource
         ]
 
-    def load_from_dict(self, jobs: dict, resource_names: list = None) -> None:
-        """Loads data from a dictionary.
-
-        Args:
-            jobs (dict): the dictionary to load data from
-            resource_names: the names of the resources to be used; if you
-                want to change the resource names from the ones in the
-                input dictionary. If None, then will use the resource
-                names in the input dictionary. If there are more resources
-                in the input dictionary than in this list, then the extra
-                resources will have a suffix append to the name.
-        """
-        self.__init__()
-        resource_mapping = {}
-        unique_resource_num = 0
-        for job, task_list in jobs.items():
-            for resource, duration in task_list:
-                if resource_names is not None:
-                    if resource not in resource_mapping:
-                        quotient, remainder = divmod(unique_resource_num, len(resource_names))
-                        resource_name = resource_names[remainder]
-                        if quotient > 0:
-                            resource_name += "_" + str(quotient)
-                        resource_mapping[resource] = resource_name
-                        unique_resource_num += 1
-                        resource_mapping[resource] = resource_name
-                    else:
-                        resource_name = resource_mapping[resource]
-                else:
-                    resource_name = resource
-                self.add_task(Task(str(job), duration=duration, resource=resource_name))
-
-    def load_from_file(self, filename: str, resource_names: list = None) -> None:
+    def load_from_file(self, filename: Union[Path, str]) -> None:
         """Loads data from a file.
 
         Args:
             filename (str): the file to load data from
         """
-        if "taillard" in str(filename):
-            job_dict = read_taillard_instance(filename)
+        if "tai" in Path(filename).name:
+            self._processing_times = read_taillard_instance(filename)
         else:
-            job_dict = read_instance(filename)
+            self._processing_times = read_or_library_instance(filename)
 
-        self.load_from_dict(job_dict, resource_names=resource_names)
+        self._resource_names = RESOURCE_NAMES[f"cargo_loading_{len(self.processing_times)}"]
+
+        for machine, machine_times in enumerate(self.processing_times):
+            for job, duration in enumerate(machine_times):
+                self.add_task(Task(str(job), duration=duration, resource=self._resource_names[machine]))

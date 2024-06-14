@@ -1,4 +1,4 @@
-/* 
+/*
 This file is forked from apps/dash-clinical-analytics/assets/clinical-analytics.css under the following license
 
 MIT License
@@ -51,6 +51,7 @@ Apache License, Version 2.0
     --grey-dark: #222222;
     --banner-height: 5.5rem;
     --left-col-width: 35rem;
+    --problem-details-height: 11rem;
 }
 
 body {
@@ -127,12 +128,30 @@ label {
     display: flex;
 }
 
-#solver-select.hide-classic label:last-child {
+#solver-select.hide-cqm label:first-child {
     display: none !important;
 }
 
 input[type="checkbox"] {
     margin: 0 1rem 0 0;
+}
+
+td {
+    color: var(--grey-dark);
+    background-color: white;
+}
+
+th, td {
+    padding: 0.5rem 1rem;
+    text-align: right;
+}
+
+th:first-child, td:first-child {
+    padding-left: 1.2rem;
+}
+
+th:last-child, td:last-child {
+    padding-right: 1.2rem;
 }
 
 #app-container {
@@ -147,22 +166,27 @@ input[type="checkbox"] {
     flex: 1;
 }
 
-#left-column {
+#columns {
+    display: flex;
+    flex: 1;
+}
+
+.left-column {
     display: flex;
 }
 
-#left-column > div > div {
+.left-column > div > div {
     padding: 0 2rem;
     width: calc(var(--left-col-width) - 4rem);
 }
 
-#left-column > div:first-child {
+.left-column > div:first-child {
     width: var(--left-col-width);
     transition: width 0.6s ease-in-out;
     overflow: hidden;
 }
 
-#left-column.collapsed > div:first-child {
+.left-column.collapsed > div:first-child {
     width: 0;
 }
 
@@ -191,20 +215,32 @@ input[type="checkbox"] {
     font-weight: bold;
 }
 
-#gantt_chart_card, #wait_time_card {
-    background-color: #FFFFFF;
-    padding: 1rem;
-    margin: auto;
-    margin-top: 20px;
+
+.gantt-chart-card {
+    height: 100%;
+    display: flex;
+    flex-flow: column;
 }
 
-#gantt_chart_card > b, #wait_time_card > b {
-    line-height: 2.5;
+.gantt-div {
+    height: 100%;
 }
 
+.gantt-chart-card > div {
+    height: 100%;
+}
 
-#gantt_chart {
-    height: 400px;
+.gantt-chart-card-parent {
+    height: 100%;
+    flex: 1 1 auto;
+}
+
+.gantt-heading-button {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    margin-right: 20rem;
+    flex: 0 1 content;
 }
 
 .table-row:nth-child(even) {
@@ -275,35 +311,15 @@ div.tab.tab--disabled {
     border: none;
 }
 
-#left-column-collapse {
+.left-column-collapse,
+.left-column-collapse:hover,
+.left-column-collapse:focus {
     background: white;
     border: 1px var(--grey-lighter);
     border-style: none solid none none;
     height: 100%;
     border-radius: 0;
     padding: 0 0 0 0.5rem;
-}
-
-#left-column-collapse div {
-    border-right: 4px solid var(--grey-light);
-    border-bottom: 4px solid var(--grey-light);
-    transform: rotate(135deg) skew(165deg, 165deg);
-    height: 2rem;
-    width: 2rem;
-    margin-right: -0.3rem;
-    transition: border-color 0.25s ease-in-out;
-}
-
-#left-column-collapse:hover div {
-    border-color: var(--grey);
-}
-
-.collapsed #left-column-collapse {
-    padding: 0 0.5rem 0 0;
-}
-
-.collapsed #left-column-collapse div {
-    transform: rotate(315deg) skew(160deg, 160deg);
 }
 
 .VirtualizedSelectFocusedOption {
@@ -345,4 +361,113 @@ div.tab.tab--disabled {
 
 #solver-time-limit {
     margin-bottom: 20px;
+}
+
+#solution-stats-table {
+    font-size: 1.5rem;
+    border: 1px solid var(--grey-light);
+}
+
+#solution-stats-table th {
+    text-align: center;
+    background-color: var(--grey-lighter);
+    width: 20rem;
+    font-size: 1.8rem;
+}
+
+#solution-stats-table th:nth-child(2n+1),
+#solution-stats-table td:nth-child(2n+1) {
+    text-align: left;
+}
+
+#solution-stats-table td:nth-child(2n) {
+    border-right: 1px solid var(--grey-light);
+}
+
+.details-collapse,
+.details-collapse:hover,
+.details-collapse:focus {
+    border: none;
+    background: none;
+    display: flex;
+    padding: 0 2rem 0 0;
+    transition: filter 0.2s ease-in-out;
+    text-transform: none;
+    height: auto;
+}
+
+.details-collapse:hover {
+    filter: brightness(70%)
+}
+
+.details-collapse-wrapper {
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+
+.problem-details-parent {
+    flex: 0 1 content;
+    z-index: 1;
+    background-color: white;
+}
+
+.problem-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-right: 4rem;
+}
+
+#highs-stats-make-span,
+#dwave-stats-make-span {
+    font-size: 2rem;
+    font-weight: 400;
+}
+
+.collapse-arrow {
+    border-right: 3px solid var(--grey-light);
+    border-bottom: 3px solid var(--grey-light);
+    transform: rotate(135deg) skew(165deg, 165deg);
+    height: 2rem;
+    width: 2rem;
+    margin-right: -0.3rem;
+    transition: border-color 0.25s ease-in-out;
+}
+.details-collapse .collapse-arrow {
+    transform: rotate(225deg) skew(165deg, 165deg);
+    margin: 1.5rem 0 0 1.5rem;
+    border-color: var(--theme);
+    height: 1.2rem;
+    width: 1.2rem;
+}
+
+.left-column-collapse:hover .collapse-arrow {
+    border-color: var(--grey);
+}
+
+.collapsed .left-column-collapse {
+    padding: 0 0.5rem 0 0;
+}
+
+.collapsed .left-column-collapse .collapse-arrow {
+    transform: rotate(315deg) skew(165deg, 165deg);
+}
+
+.collapsed .details-collapse .collapse-arrow {
+    margin-top: 1rem;
+    transform: rotate(45deg) skew(165deg, 165deg);
+}
+
+.details-to-collapse {
+    height: var(--problem-details-height);
+    transition: height 0.6s ease-in-out;
+    overflow: hidden;
+}
+
+.collapsed .details-to-collapse {
+    height: 0;
+}
+
+hr {
+    margin: 1rem 0;
 }

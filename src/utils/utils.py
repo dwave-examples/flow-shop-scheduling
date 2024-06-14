@@ -1,8 +1,20 @@
+from __future__ import annotations
+
+from functools import cache
 import os
 from collections import defaultdict
+from pathlib import Path
+from typing import TYPE_CHECKING, Union
+
+import numpy as np
 
 from dimod import BINARY, INTEGER, ConstrainedQuadraticModel, sym
 from tabulate import tabulate
+
+from app_configs import OR_INSTANCES
+
+if TYPE_CHECKING:
+    from numpy.typing import array_like
 
 
 def print_cqm_stats(cqm: ConstrainedQuadraticModel) -> None:
@@ -135,19 +147,15 @@ def write_solution_to_file(
     print(f"\nSaved schedule to " f"{os.path.join(os.getcwd(), solution_file_path)}")
 
 
-def read_taillard_instance(instance_path: str) -> dict:
-    """A method that reads input instance file from the taillard
-    dataset
+def read_taillard_instance(instance_path: Union[Path, str]) -> array_like:
+    """Reads input instance file from the taillard dataset
 
     Args:
         instance_path:  path to the job shop instance file
 
     Returns:
-        Job_dict: dictionary containing jobs as keys and a list of tuple of
-                machines and their processing time as values.
+        array_like: array containing the processing times
     """
-    job_dict = defaultdict(list)
-
     with open(instance_path) as f:
         # ignore the first line
         f.readline()
@@ -159,27 +167,101 @@ def read_taillard_instance(instance_path: str) -> dict:
         # ignore the next line
         f.readline()
 
-        # the next lines contain the processing times for each job for each resource; read this in as
-        # as matrix until "Machine" is encountered
+        # iterate through the processing times
         processing_times = []
-        line = f.readline()
-        while "Machine" not in line:
-            processing_times.append(list(map(int, line.split())))
-            line = f.readline()
+        for line in f:
+            try:
+                times = list(map(int, line.split()))
+            except ValueError:
+                # break when reaching a non-integer row
+                # e.g., end of processing-times matrix
+                break
 
-        # the next lines contain the machine order for each job; read this in as
-        # as matrix until a blank line is encountered
-        machine_order = []
-        line = f.readline()
-        while line != "\n" and line != "" and line is not None:
-            machine_order.append(list(map(int, line.split())))
-            line = f.readline()
+            processing_times.append(times)
 
-        for job in range(num_jobs):
-            for machine in range(num_machines):
-                job_dict[job].append((machine_order[job][machine], processing_times[job][machine]))
+        assert len(processing_times) == num_machines
+        assert len(processing_times[0]) == num_jobs
 
-        assert len(job_dict) == num_jobs
-        assert len(job_dict[0]) == num_machines
+        return np.array(processing_times)
 
-        return job_dict
+
+def read_or_library_instance(instance_path: Union[Path, str]) -> array_like:
+    """Read the OR library formatted Flow Shop Schedule problems.
+
+    Args:
+        instance_path: Pseudo-path to the flow shop problem instance. Looks for
+            problem with the correct label in the ``flowshop1.txt`` file.
+
+    Returns:
+        array_like: array containing the processing times
+    """
+    instance_label = Path(instance_path).name
+    instance_path = Path(instance_path).parent / OR_INSTANCES
+
+    return load_or_library_instances(instance_path)[instance_label]
+
+@cache
+def load_or_library_instances(instance_path: Union[Path, str]) -> list[dict]:
+    """Read the OR library formatted Flow Shop Schedule problems file.
+
+    Args:
+        instance_path: path to the job shop instance file
+
+    Returns:
+        list[dict]: list containing the processing times as values and labels as keys
+    """
+    instances = {}
+    label = None
+    processing_times = []
+    num_jobs = num_machines = None
+    expect_problem = expect_label = False
+
+
+    def _store_instance(processing_times):
+        """Store processing_times as instance."""
+        # stored as num_jobs x num_machines
+        assert len(processing_times) == num_jobs
+        assert len(processing_times[0]) == num_machines
+
+        processing_times_array = np.array(processing_times).T
+        instances[label] = processing_times_array
+        processing_times.clear()
+
+
+    with open(instance_path) as f:
+        for line in f:
+            if line.isspace():
+                continue
+
+            if "END OF DATA" in line:
+                # scan done; store final instance and break
+                _store_instance(processing_times)
+                break
+
+            elif line.strip() == "+++++++++++++++++++++++++++++":
+                # if separator is found while expecting a problem,
+                # it's the end of the problem and we store it
+                if expect_problem:
+                    _store_instance(processing_times)
+
+                # if separator is found while expecting a label
+                # it's the end of label and thus start of problem
+                elif expect_label:
+                    # skip name row and move on to size row
+                    _ = next(f)
+
+                    line = next(f)
+                    num_jobs, num_machines = tuple(map(int, line.split()))
+
+                expect_problem = expect_label
+                expect_label = not expect_label
+
+            elif expect_label and line[:9].strip() == "instance":
+                label = line[10:].strip()
+
+            elif expect_problem:
+                # times are every second value (rest are machine number)
+                times = list(map(int, line.split()))[1::2]
+                processing_times.append(times)
+
+        return instances
