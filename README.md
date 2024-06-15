@@ -57,23 +57,23 @@ Several problem instances are pre-populated under the `input` folder. Some of th
 
 These are the parameters of the problem:
 
-- `n` : the number of jobs
-- `m` : the number of machines
-- `J` : set of jobs (`{0,1,2,...,n-1}`)
-- `M` : set of machines (`{0,1,2,...,m-1}`)
-- `T` : set of tasks (`{0,1,2,...,m-1}`) that has same dimension as `M`.
+- `n`: the number of jobs
+- `m`: the number of machines
+- `J`: set of jobs (`{0,1,2,...,n-1}`)
+- `M`: set of machines (`{0,1,2,...,m-1}`)
+- `T`: set of tasks (`{0,1,2,...,m-1}`) that has same dimension as `M`
 - `M_(j,t)`:  the machine that processes task `t` of job `j`
-- `T_(j,i)`  : the task that is processed by machine `i` for job `j`
+- `T_(j,i)`: the task that is processed by machine `i` for job `j`
 - `D_(j,t)`:  the processing duration that task `t` needs for job `j`
 - `V`:  maximum possible make-span
 
 ### Variables
 
-- `w` is a positive integer variable that defines the completion time (make-span)
+- `w`: a positive integer variable that defines the completion time (make-span)
 of the JSS
-- `x_(j_i)` are positive integer variables used to model start of each job `j` on
+- `x_(j_i)`: positive integer variables used to model start of each job `j` on
   machine `i`
-- `y_(j_k,i)` are binaries which define if job `k` precedes job `j` on machine `i`
+- `y_(j_k,i)`: binaries which define if job `k` precedes job `j` on machine `i`
 
 ### Objective
 
@@ -81,9 +81,8 @@ The objective is to minimize the make-span (`w`) of the given FSS problem.
 
 ### Nonlinear Model
 
-The nonlinear model represents the problem using only the job order for the machines.
-This is sufficient to construct feasible, compact solutions. In seeking a minimum, the 
-model uses Ocean's
+The nonlinear model represents the problem using only the job order for the machines. This is 
+sufficient to construct feasible, compact solutions. In seeking a minimum, the model uses Ocean's
 [dwave-optimization](https://docs.ocean.dwavesys.com/en/stable/docs_optimization/sdk_index.html)
 package's ``ListVariable`` to efficiently permutate the order of jobs.
 
