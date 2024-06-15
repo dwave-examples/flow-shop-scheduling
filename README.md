@@ -1,92 +1,55 @@
 [![Open in GitHub Codespaces](
   https://img.shields.io/badge/Open%20in%20GitHub%20Codespaces-333?logo=github)](
-  https://codespaces.new/dwave-examples/job-shop-scheduling-cqm?quickstart=1)
-[![Linux/Mac/Windows build status](
-  https://circleci.com/gh/dwave-examples/job-shop-scheduling-cqm.svg?style=shield)](
-  https://circleci.com/gh/dwave-examples/job-shop-scheduling-cqm)
+  https://codespaces.new/dwave-examples/flow-shop-scheduling-nl?quickstart=1)
 
-# Job Shop Scheduling using CQM
-[Job shop scheduling](https://en.wikipedia.org/wiki/Job-shop_scheduling) is an optimization problem where the goal is to schedule jobs on a certain number of machines according to a process order for each job. The objective is to minimize the length of schedule also called make-span, or completion time of the last task of all jobs.
+# Flow Shop Scheduling
+[Job shop scheduling](https://en.wikipedia.org/wiki/Job-shop_scheduling) (JSS) is an optimization problem with the goal of scheduling, on a number of machines, jobs with diverse orderings of processing on the machines. The objective is to minimize the schedule length, also called "make-span," or completion time of the last task of all jobs. [Flow shop scheduling](https://en.wikipedia.org/wiki/Flow-shop_scheduling) (FSS) is a constrained case of JSS where every job uses every machine in the same order. The machines in FSS problems can often be seen as sequential operations to be executed on each job, as is the case in this particular demo.
 
-This example demonstrates a means of formulating and optimizing job shop  scheduling (JSS) using a [constrained quadratic model](https://docs.ocean.dwavesys.com/en/stable/concepts/cqm.html#cqm-sdk) (CQM) that can be solved using a Leap hybrid CQM solver. Contained in this example is the code for running the job shop scheduler as well as a user interface built with [Dash](https://dash.plotly.com/).
+![Demo Screenshot](_static/screenshot.png)
+
+This example demonstrates three ways of formulating and optimizing FSS:
+
+*    Formulating a
+     [nonlinear model](https://docs.ocean.dwavesys.com/en/stable/concepts/nl_model.html)
+     and solving on a Leap hybrid nonlinear-model solver
+*    Formulating a
+     [constrained quadratic model](https://docs.ocean.dwavesys.com/en/stable/concepts/cqm.html)
+     (CQM) and solving on a Leap hybrid CQM solver
+*    Formulating a mixed-integer problem and solving on a classical mixed-integer linear solver
+
+This example lets you run the scheduler from either the command line or a visual interface built with [Dash](https://dash.plotly.com/).
 
 ## Usage
-To run the job shop demo with the user interface, from the command line enter
+Your development environment should be configured to
+[access Leap’s Solvers](https://docs.ocean.dwavesys.com/en/stable/overview/sapi.html).
+You can see information about supported IDEs and authorizing access to your
+Leap account [here](https://docs.dwavesys.com/docs/latest/doc_leap_dev_env.html).
+
+To run the flow shop demo with the visual interface, from the command line enter
 
     python app.py
 
-This will launch a local instance of the application on localhost. The default run location is http://127.0.0.1:8050/. Open the location in a web browser to view the application.
+Access the user interface with your browser at http://127.0.0.1:8050/.
 
-To run the stand-alone job shop demo (without the user interace), use the command:
+To run the flow shop scheduler without the Dash interface, from the command line enter
 
     python job_shop_scheduler.py [-h] [-i INSTANCE] [-tl TIME_LIMIT] [-os OUTPUT_SOLUTION] [-op OUTPUT_PLOT] [-m] [-v] [-q] [-p PROFILE] [-mm MAX_MAKESPAN]
 
-This will call the job shop scheduling algorithm for the input instance file. Command line arguments are defined as:
+This calls the FSS algorithm for the input file. Command line arguments are as follows:
 - -h (or --help): show this help message and exit
-- -i (--instance): path to the input instance file; (default: input/instance5_5.txt)
+- -i (--instance): path to the input instance file (default: input/tai20_5.txt); see `app_configs.py` for instance names
 - -tl (--time_limit) time limit in seconds (default: None)
--  -os (--output_solution): path to the output solution file (default: output/solution.txt)
--  -op (--output_plot): path to the output plot file (default: output/schedule.png)
--  -m (--use_scipy_solver): Whether to use the HiGHS via SciPy solver instead of the CQM solver (default: False)
--  -v (--verbose): Whether to print verbose output (default: True)
--  -p (--profile): The profile variable to pass to the Sampler. Defaults to None. (default: None)
--  -mm (--max_makespan): Upperbound on how long the schedule can be; leave empty to auto-calculate an appropriate value. (default: None)
+- -os (--output_solution): path to the output solution file (default: output/solution.txt)
+- -op (--output_plot): path to the output plot file (default: output/schedule.png)
+- -m (--use_scipy_solver): use SciPy's HiGHS solver instead of the CQM solver (default: True)
+- -m (--use_nl_solver): use the nonlinear-model solver instead of the CQM solver (default: False)
+- -v (--verbose): print verbose output (default: True)
+- -p (--profile): profile variable to pass to the sampler (default: None)
+- -mm (--max_makespan): manually set an upper-bound on the schedule length instead of auto-calculating (default: None)
 
-There are several instances pre-populated under `input` folder. Some of the instances were randomly generated using `utils/jss_generator.py` as discussed under the [Problem generator](#Generating-Problem-Instances) section.
+### Problem Instances
 
-Other instances were pulled from [E. Taillard's list] of benchmarking instances. If the string "taillard" is contained in the filename, the model will expect the input file to match the format used by Taillard. Otherwise, the following format is expected:
-
-```
-#Num of jobs: 5
-#Num of machines: 5
-                task 0            task 1            task 2            task 3            task 4
-  job id    machine    dur    machine    dur    machine    dur    machine    dur    machine    dur
---------  ---------  -----  ---------  -----  ---------  -----  ---------  -----  ---------  -----
-       0          1      3          3      4          4      4          0      5          2      1
-       1          3      4          2      0          1      0          0      1          4      0
-       2          1      5          4      5          2      4          0      0          3      3
-       3          4      1          3      4          0      2          2      0          1      2
-       4          1      3          3      3          0      0          2      0          4      1
-
-```
-
-Note that:
-- tasks must be executed sequentially;
-- `dur` refers to the processing duration of a task;
-- this demo solves a variant of job-shop-scheduling problem
-
-The program produces a solution schedule like this:
-
-```
-#Number of jobs: 5
-#Number of machines: 5
-#Completion time: 22.0
-
-                  machine 0               machine 1               machine 2               machine 3               machine 4
-  job id    task    start    dur    task    start    dur    task    start    dur    task    start    dur    task    start    dur
---------  ------  -------  -----  ------  -------  -----  ------  -------  -----  ------  -------  -----  ------  -------  -----
-       0       3       16      5       0        5      3       4       21      1       1        8      4       2       12      4
-       1       3        6      1       2        5      0       1        4      0       0        0      4       4        9      0
-       2       3       17      0       0        0      5       2       13      4       4       17      3       1        6      5
-       3       2        9      2       4       19      2       3       14      0       1        4      4       0        1      1
-       4       2       18      0       0        9      3       3       21      0       1       14      3       4       21      1
-```
-
-The following graphic is an illustration of this solution.
-
-![Example Solution](_static/schedule.png)
-
-### Generating Problem Instances
-
-`utils/jss_generator.py` can be used to generate random problem instances.
-For example, a 5 * 6 instance with a maximum duration of 8 hours can be
-generated with:
-
-`python utils/jss_generator.py 5 6 8 -path < folder location to store generated instance file >`
-
-To see a full description of the options, type:
-
-`python utils/jss_generator.py -h`
+Several problem instances are pre-populated under the `input` folder. Some of these instances are contained within the `flowshop1.txt` file, retrieved from the [OR-Library], and parsed when the demo is initialized. These can be accessed as if they were files in the `input` folder, named according to the instance short names in `flowshop1.txt` (e.g., "car2", "reC13"), without filename endings. Other instances were pulled from [E. Taillard's list] of benchmarking instances. If the string "tai" is in the filename, the model expects the format used by Taillard.
 
 ## Model and Code Overview
 
@@ -94,29 +57,55 @@ To see a full description of the options, type:
 
 These are the parameters of the problem:
 
-- `n` : is the number of jobs
-- `m` : is the number of machines
-- `J` : is the set of jobs (`{0,1,2,...,n}`)
-- `M` : is the set of machines (`{0,1,2,...,m}`)
-- `T` : is the set of tasks (`{0,1,2,...,m}`) that has same dimension as `M`.
-- `M_(j,t)`:  is the machine that processes task `t` of job `j`
-- `T_(j,i)`  : is the task that is processed by machine `i` for job `j`
-- `D_(j,t)`:  is the processing duration that task `t` needs for job `j`
+- `n`: the number of jobs
+- `m`: the number of machines
+- `J`: set of jobs (`{0,1,2,...,n-1}`)
+- `M`: set of machines (`{0,1,2,...,m-1}`)
+- `T`: set of tasks (`{0,1,2,...,m-1}`) that has same dimension as `M`
+- `M_(j,t)`:  the machine that processes task `t` of job `j`
+- `T_(j,i)`: the task that is processed by machine `i` for job `j`
+- `D_(j,t)`:  the processing duration that task `t` needs for job `j`
 - `V`:  maximum possible make-span
 
 ### Variables
 
-- `w` is a positive integer variable that defines the completion time (make-span)
+- `w`: a positive integer variable that defines the completion time (make-span)
 of the JSS
-- `x_(j_i)` are positive integer variables used to model start of each job `j` on
+- `x_(j_i)`: positive integer variables used to model start of each job `j` on
   machine `i`
-- `y_(j_k,i)` are binaries which define if job `k` precedes job `j` on machine `i`
+- `y_(j_k,i)`: binaries which define if job `k` precedes job `j` on machine `i`
 
 ### Objective
 
-Our objective is to minimize the make-span (`w`) of the given JSS problem.
+The objective is to minimize the make-span (`w`) of the given FSS problem.
 
-### Constraints
+### Nonlinear Model
+
+The nonlinear model represents the problem using only the job order for the machines. This is 
+sufficient to construct feasible, compact solutions. In seeking a minimum, the model uses Ocean's
+[dwave-optimization](https://docs.ocean.dwavesys.com/en/stable/docs_optimization/sdk_index.html)
+package's ``ListVariable`` to efficiently permutate the order of jobs.
+
+Typically, solver performance strongly depends on the size of the solution space for the modeled
+problem: models with smaller spaces of feasible solutions tend to perform better than ones with
+larger spaces. A powerful way to reduce the feasible-solutions space is by using variables that act
+as implicit constraints, such as the ``ListVariable`` symbol used here, where the order of jobs is a
+permutation of values. The ``max`` operation is used to extract the start time for each job, making
+sure that there's no overlap between jobs on machines. No other constraints are necessary.
+
+As can be seen in the two example images below, switching the job order can improve the solution
+quality, corresponding to a lowering of the completion time, or the makespan, for the FSS problem.
+
+![fss_example0](_static/fss_example0.png)
+Above: a solution to a flow shop scheduling problem with 3 jobs on 3 machines.
+
+![fss_example1](_static/fss_example1.png)
+Above: an improved solution to the same problem with a permutated job order.
+
+### Constraint Quadratic Model
+The constrained quadratic model (CQM) requires adding a set of constraints to ensure that tasks
+are executed in order and that no single machine is used by different jobs at the same time.
+
 #### Precedence Constraint
 
 Our first constraint, [equation 1](#eq2), enforces the precedence constraint.
@@ -165,3 +154,4 @@ Volume 73, 2016, Pages 165-173.
 Released under the Apache License 2.0. See [LICENSE](LICENSE) file.
 
 [E. Taillard's list]: http://mistic.heig-vd.ch/taillard/problemes.dir/ordonnancement.dir/ordonnancement.html
+[OR-Library]: https://people.brunel.ac.uk/~mastjjb/jeb/orlib/flowshopinfo.html
