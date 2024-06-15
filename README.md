@@ -57,14 +57,14 @@ Several problem instances are pre-populated under the `input` folder. Some of th
 
 These are the parameters of the problem:
 
-- `n` : is the number of jobs
-- `m` : is the number of machines
+- `n` : the number of jobs
+- `m` : the number of machines
 - `J` : set of jobs (`{0,1,2,...,n-1}`)
 - `M` : set of machines (`{0,1,2,...,m-1}`)
 - `T` : set of tasks (`{0,1,2,...,m-1}`) that has same dimension as `M`.
-- `M_(j,t)`:  is the machine that processes task `t` of job `j`
-- `T_(j,i)`  : is the task that is processed by machine `i` for job `j`
-- `D_(j,t)`:  is the processing duration that task `t` needs for job `j`
+- `M_(j,t)`:  the machine that processes task `t` of job `j`
+- `T_(j,i)`  : the task that is processed by machine `i` for job `j`
+- `D_(j,t)`:  the processing duration that task `t` needs for job `j`
 - `V`:  maximum possible make-span
 
 ### Variables
@@ -82,16 +82,17 @@ The objective is to minimize the make-span (`w`) of the given FSS problem.
 ### Nonlinear Model
 
 The nonlinear model represents the problem using only the job order for the machines.
-This is sufficient to construct all feasible compact solutions. The model uses Ocean's
+This is sufficient to construct feasible, compact solutions. In seeking a minimum, the 
+model uses Ocean's
 [dwave-optimization](https://docs.ocean.dwavesys.com/en/stable/docs_optimization/sdk_index.html)
-package's ``ListVariable`` to efficiently permutate the order of jobs to be minimized.
+package's ``ListVariable`` to efficiently permutate the order of jobs.
 
 Typically, solver performance strongly depends on the size of the solution space for the modeled
 problem: models with smaller spaces of feasible solutions tend to perform better than ones with
 larger spaces. A powerful way to reduce the feasible-solutions space is by using variables that act
 as implicit constraints, such as the ``ListVariable`` symbol used here, where the order of jobs is a
 permutation of values. The ``max`` operation is used to extract the start time for each job, making
-sure that there's no overlap between jobs on different machines. No other constraints are necessary.
+sure that there's no overlap between jobs on machines. No other constraints are necessary.
 
 As can be seen in the two example images below, switching the job order can improve the solution
 quality, corresponding to a lowering of the completion time, or the makespan, for the FSS problem.
