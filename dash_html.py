@@ -61,7 +61,6 @@ def description_card():
 
 def dropdown(label: str, id: str, options: list, wrapper_id: str = "", wrapper_class_name: str = "") -> html.Div:
     """Slider element for value selection."""
-
     return html.Div(
         id = wrapper_id,
         className = wrapper_class_name,
@@ -91,6 +90,20 @@ def checklist(label: str, id: str, options: list) -> html.Div:
         ],
     )
 
+def generate_graph(visible: bool, type: str, index: int) -> html.Div:
+    """Generates graph either hidden or visible."""
+    return html.Div(
+        id={"type": f"gantt-chart-{'visible' if visible else 'hidden'}-wrapper", "index": index},
+        className="" if visible else "display-none",
+        children=[
+            dcc.Graph(
+                id={"type": f"gantt-chart-{type}", "index": index},
+                responsive=True,
+                config={"displayModeBar": False},
+            ),
+        ]
+    ),
+
 
 def generate_solution_tab(label: str, title: str, tab: str, index: int) -> dcc.Tab:
     """Generates solution tab containing, solution graphs, sort functionality, and
@@ -116,7 +129,10 @@ def generate_solution_tab(label: str, title: str, tab: str, index: int) -> dcc.T
                                 className="gantt-heading",
                                 children=[
                                     html.H3(
-                                        title,
+                                        [
+                                            title,
+                                            html.Span(id=f"{tab}-gantt-title-span")
+                                        ],
                                         className="gantt-title",
                                     ),
                                     html.Button(
@@ -130,27 +146,8 @@ def generate_solution_tab(label: str, title: str, tab: str, index: int) -> dcc.T
                             html.Div(
                                 className="graph-wrapper",
                                 children=[
-                                    html.Div(
-                                        id={"type": "gantt-chart-visible-wrapper", "index": index},
-                                        children=[
-                                            dcc.Graph(
-                                                id={"type": "gantt-chart-jobsort", "index": index},
-                                                responsive=True,
-                                                config={"displayModeBar": False},
-                                            ),
-                                        ]
-                                    ),
-                                    html.Div(
-                                        id={"type": "gantt-chart-hidden-wrapper", "index": index},
-                                        className="display-none",
-                                        children=[
-                                            dcc.Graph(
-                                                id={"type": "gantt-chart-startsort", "index": index},
-                                                responsive=True,
-                                                config={"displayModeBar": False},
-                                            ),
-                                        ]
-                                    )
+                                    *generate_graph(True, "jobsort", index),
+                                    *generate_graph(False, "startsort", index),
                                 ]
                             )
                         ]
@@ -159,10 +156,7 @@ def generate_solution_tab(label: str, title: str, tab: str, index: int) -> dcc.T
                         [
                             html.Hr(),
                             html.Div(
-                                [
-                                    problem_details(tab, index),
-                                    html.H5(id=f"{tab}-stats-makespan"),
-                                ],
+                                problem_details(tab, index+1),
                                 className="problem-details"
                             ),
                         ],
@@ -252,13 +246,19 @@ def problem_details(solver: str, index: int) -> html.Div:
                 id={"type": "to-collapse-class", "index": index},
                 className="details-collapse-wrapper collapsed",
                 children=[
-                    html.Button(
-                        id={"type": "collapse-trigger", "index": index},
-                        className="details-collapse",
+                    html.Div(
+                        className="details-collapse-title",
                         children=[
-                            html.H5("Problem Details"),
-                            html.Div(className="collapse-arrow"),
-                        ],
+                            html.H5(id=f"{solver}-stats-makespan", className="stats-makespan"),
+                            html.Button(
+                                id={"type": "collapse-trigger", "index": index},
+                                className="details-collapse",
+                                children=[
+                                    html.H5("Problem Details"),
+                                    html.Div(className="collapse-arrow"),
+                                ],
+                            ),
+                        ]
                     ),
                     html.Div(
                         className="details-to-collapse",
@@ -356,13 +356,13 @@ def set_html(app):
                                                 className="gantt-chart-card",
                                                 children=[
                                                     html.Div(
-                                                        [
+                                                        className="gantt-heading",
+                                                        children=[
                                                             html.H3(
                                                                 "Unscheduled Jobs and Operations",
                                                                 className="gantt-title",
                                                             ),
                                                         ],
-                                                        className="gantt-heading",
                                                     ),
                                                     dcc.Loading(
                                                         id="loading-icon-input",
@@ -381,9 +381,8 @@ def set_html(app):
                                             ),
                                         ],
                                     ),
-                                    # dcc.Tab seems to return a list so these need to be unpacked
-                                    *generate_solution_tab(DWAVE_TAB_LABEL, "Leap Hybrid Solver", "dwave", 0),
-                                    *generate_solution_tab(CLASSICAL_TAB_LABEL, "HiGHS Classical Solver", "highs", 1),
+                                    *generate_solution_tab(DWAVE_TAB_LABEL, "Quantum Hybrid Solver", "dwave", 0),
+                                    *generate_solution_tab(CLASSICAL_TAB_LABEL, "Classical Solver (HiGHS)", "highs", 1),
                                 ],
                             )
                         ],

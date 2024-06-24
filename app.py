@@ -119,13 +119,10 @@ def toggle_left_column(collapse_trigger: int, to_collapse_class: str) -> str:
 def update_solvers_selected(
     selected_solvers: list[int],
 ) -> list[dict]:
-    """Disable NL/CQM solver checkboxes when the other one is selected.
-
-    Note, can be removed if CQM solver is not in use.
+    """Hide NL/CQM selector when Hybrid is unselected. Not applicable when SHOW_CQM is False.
 
     Args:
         selected_solvers (list[int]): Currently selected solvers.
-        solver_options (list[dict]): List of solver checkbox options.
 
     Returns:
         list: Updated list of solver checkbox options.
@@ -138,15 +135,15 @@ def update_solvers_selected(
 
 @app.callback(
     Output("dwave-tab", "label", allow_duplicate=True),
-    Output("highs-tab", "label", allow_duplicate=True),
     Output("dwave-tab", "disabled", allow_duplicate=True),
-    Output("highs-tab", "disabled", allow_duplicate=True),
     Output("dwave-tab", "className", allow_duplicate=True),
+    Output("running-dwave", "data", allow_duplicate=True),
+    Output("highs-tab", "label", allow_duplicate=True),
+    Output("highs-tab", "disabled", allow_duplicate=True),
     Output("highs-tab", "className", allow_duplicate=True),
+    Output("running-classical", "data", allow_duplicate=True),
     Output("run-button", "className", allow_duplicate=True),
     Output("cancel-button", "className", allow_duplicate=True),
-    Output("running-dwave", "data", allow_duplicate=True),
-    Output("running-classical", "data", allow_duplicate=True),
     Output("tabs", "value"),
     [
         Input("run-button", "n_clicks"),
@@ -167,43 +164,33 @@ def update_tab_loading_state(
 
     Returns:
         str: The label for the D-Wave tab.
-        str: The label for the Classical tab.
         bool: True if D-Wave tab should be disabled, False otherwise.
-        bool: True if Classical tab should be disabled, False otherwise.
         str: Class name for the D-Wave tab.
+        bool: Whether Hybrid is running.
+        str: The label for the Classical tab.
+        bool: True if Classical tab should be disabled, False otherwise.
         str: Class name for the Classical tab.
+        bool: Whether HiGHS is running.
         str: Run button class.
         str: Cancel button class.
-        bool: Whether Hybrid is running.
-        bool: Whether HiGHS is running.
         str: The value of the tab that should be active.
     """
 
     if ctx.triggered_id == "run-button" and run_click > 0:
-        run_hybrid = SamplerType.HYBRID.value in solvers
-        run_highs = SamplerType.HIGHS.value in solvers
+        running = ("Loading...", True, "tab", True)
 
         return (
-            "Loading..." if run_hybrid else dash.no_update,
-            "Loading..." if run_highs else dash.no_update,
-            True if run_hybrid else dash.no_update,
-            True if run_highs else dash.no_update,
-            "tab",
-            "tab",
+            *(running if SamplerType.HYBRID.value in solvers else [dash.no_update] * 4),
+            *(running if SamplerType.HIGHS.value in solvers else [dash.no_update] * 4),
             "display-none",
             "",
-            run_hybrid,
-            run_highs,
             "input-tab",
         )
     if ctx.triggered_id == "cancel-button" and cancel_click > 0:
         return (
             DWAVE_TAB_LABEL,
             CLASSICAL_TAB_LABEL,
-            dash.no_update,
-            dash.no_update,
-            dash.no_update,
-            dash.no_update,
+            *([dash.no_update] * 4),
             "",
             "display-none",
             False,
@@ -252,21 +239,21 @@ def update_button_visibility(running_dwave: bool, running_classical: bool) -> tu
     ],
     prevent_initial_call=True,
 )
-def switch_gantt_chart(new_click: int, sort_button_text: str, visibleChart: str, hiddenChart: str) -> tuple[str, str, str]:
+def switch_gantt_chart(new_click: int, sort_button_text: str, visibleChart: list, hiddenChart: list) -> tuple[str, str, str]:
     """Switch between the results plot sorted by job or by start time.
 
     Args:
         new_click (int): The number of times the sort button has been clicked.
-        sort_button_text: The text in the sort button (indicating how to sort the plot).
+        sort_button_text (str): The text of the sort button (indicating how to sort the plot).
+        visibleChart (list): The children of the currently visible graph.
+        hiddenChart (list): The children of the currently hidden graph.
 
     Return:
-        str: The results class name sorted by job (whether hidden or displayed).
-        str: The results class name sorted by start time (whether hidden or displayed).
+        list: The new graph that should be visible.
+        list: The new graph that should be hidden.
         str: The new text of the sort button.
     """
-    if sort_button_text == "Sort by start time":
-        return hiddenChart, visibleChart, "Sort by job"
-    return hiddenChart, visibleChart, "Sort by start time"
+    return hiddenChart, visibleChart, "Sort by job" if sort_button_text == "Sort by start time" else "Sort by start time"
 
 
 @app.callback(
@@ -279,9 +266,10 @@ def switch_gantt_chart(new_click: int, sort_button_text: str, visibleChart: str,
     Output("dwave-stats-solver", "children"),
     Output("dwave-stats-jobs", "children"),
     Output("dwave-stats-resources", "children"),
+    Output("dwave-tab", "disabled"),
+    Output("dwave-gantt-title-span", "children"),
     Output("dwave-tab", "className"),
     Output("dwave-tab", "label"),
-    Output("dwave-tab", "disabled"),
     Output("running-dwave", "data"),
     background=True,
     inputs=[
@@ -296,7 +284,7 @@ def switch_gantt_chart(new_click: int, sort_button_text: str, visibleChart: str,
 )
 def run_optimization_hybrid(
     run_click: int, solvers: list[int], hybrid_solver: int, scenario: str, time_limit: int
-) -> tuple[go.Figure, go.Figure, str, str, str, str, str, str, str, str, str, bool, bool]:
+) -> tuple[go.Figure, go.Figure, str, str, str, str, str, str, str, str, str, bool, bool, str]:
     """Runs optimization using the D-Wave hybrid solver.
 
     Args:
@@ -316,16 +304,17 @@ def run_optimization_hybrid(
         str: Solver for the D-Wave tab.
         str: Number of jobs for the D-Wave tab.
         str: Number of resources the D-Wave tab.
+        bool: True if D-Wave tab should be disabled, False otherwise.
+        str: Graph title span to add the solver type to.
         str: Class name for the D-Wave tab.
         str: The label for the D-Wave tab.
-        bool: True if D-Wave tab should be disabled, False otherwise.
         bool: Whether D-Wave solver is running.
     """
     if ctx.triggered_id != "run-button" or run_click == 0:
         raise PreventUpdate
 
     if SamplerType.HYBRID.value not in solvers:
-        return (*([dash.no_update] * 9), "tab", DWAVE_TAB_LABEL, dash.no_update, False)
+        return (*([dash.no_update] * 11), "tab", DWAVE_TAB_LABEL, False)
 
     start = time.perf_counter()
     model_data = JobShopData()
@@ -353,9 +342,11 @@ def run_optimization_hybrid(
         "NL Solver" if running_nl else "CQM Solver",
         model_data.get_job_count(),
         model_data.get_resource_count(),
-        )
+    )
 
-    return (fig_jobsort, fig_startsort, *table, "tab-success", DWAVE_TAB_LABEL, False, False)
+    title_solver = " (NL)" if running_nl else " (CQM)"
+
+    return (fig_jobsort, fig_startsort, *table, False, title_solver, "tab-success", DWAVE_TAB_LABEL, False)
 
 
 @app.callback(
@@ -368,9 +359,9 @@ def run_optimization_hybrid(
     Output("highs-stats-solver", "children"),
     Output("highs-stats-jobs", "children"),
     Output("highs-stats-resources", "children"),
+    Output("highs-tab", "disabled"),
     Output("highs-tab", "className"),
     Output("highs-tab", "label"),
-    Output("highs-tab", "disabled"),
     Output("running-classical", "data"),
     background=True,
     inputs=[
@@ -404,16 +395,16 @@ def run_optimization_scipy(
         str: Solver for the Classical tab.
         str: Number of jobs for the Classical tab.
         str: Number of resources the Classical tab.
+        bool: True if Classical tab should be disabled, False otherwise.
         str: Class name for the Classical tab.
         str: The label for the Classical tab.
-        bool: True if Classical tab should be disabled, False otherwise.
         bool: Whether Classical solver is running.
     """
     if ctx.triggered_id != "run-button" or run_click == 0:
         raise PreventUpdate
 
     if SamplerType.HIGHS.value not in solvers:
-        return (*([dash.no_update] * 9), "tab", CLASSICAL_TAB_LABEL, dash.no_update, False)
+        return (*([dash.no_update] * 10), "tab", CLASSICAL_TAB_LABEL, False)
 
     start = time.perf_counter()
     model_data = JobShopData()
@@ -427,32 +418,24 @@ def run_optimization_scipy(
         solver_time_limit=time_limit,
     )
 
-    if results.empty:
-        fig = get_empty_figure("No solution found for Classical solver")
-        table = (
-            "Makespan: 0",
-            time_limit,
-            round(time.perf_counter() - start, 2),
-            scenario,
-            "HiGHS",
-            model_data.get_job_count(),
-            model_data.get_resource_count(),
-            )
-        return (fig, fig, *table, "tab-fail", CLASSICAL_TAB_LABEL, False, False)
-
-    fig_jobsort = generate_gantt_chart(results, sort_by="JobInt")
-    fig_startsort = generate_gantt_chart(results, sort_by="Start")
-
     table = (
-        f"Makespan: {int(results['Finish'].max())}",
+        f"Makespan: {0 if results.empty else int(results['Finish'].max())}",
         time_limit,
         round(time.perf_counter() - start, 2),
         scenario,
         "HiGHS",
         model_data.get_job_count(),
         model_data.get_resource_count(),
-        )
-    return (fig_jobsort, fig_startsort, *table, "tab-success", CLASSICAL_TAB_LABEL, False, False)
+    )
+
+    if results.empty:
+        fig = get_empty_figure("No solution found for Classical solver")
+        return (fig, fig, *table, "tab-fail", CLASSICAL_TAB_LABEL, False, False)
+
+    fig_jobsort = generate_gantt_chart(results, sort_by="JobInt")
+    fig_startsort = generate_gantt_chart(results, sort_by="Start")
+
+    return (fig_jobsort, fig_startsort, *table, False, "tab-success", CLASSICAL_TAB_LABEL, False)
 
 
 @app.callback(
