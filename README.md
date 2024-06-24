@@ -3,7 +3,7 @@
   https://codespaces.new/dwave-examples/flow-shop-scheduling-nl?quickstart=1)
 
 # Flow Shop Scheduling
-[Job shop scheduling](https://en.wikipedia.org/wiki/Job-shop_scheduling) (JSS) is an optimization problem with the goal of scheduling, on a number of machines, jobs with diverse orderings of processing on the machines. The objective is to minimize the schedule length, also called "make-span," or completion time of the last task of all jobs. [Flow shop scheduling](https://en.wikipedia.org/wiki/Flow-shop_scheduling) (FSS) is a constrained case of JSS where every job uses every machine in the same order. The machines in FSS problems can often be seen as sequential operations to be executed on each job, as is the case in this particular demo.
+[Job shop scheduling](https://en.wikipedia.org/wiki/Job-shop_scheduling) (JSS) is an optimization problem with the goal of scheduling, on a number of machines, jobs with diverse orderings of processing on the machines. The objective is to minimize the schedule length, also called "makespan," or completion time of the last task of all jobs. [Flow shop scheduling](https://en.wikipedia.org/wiki/Flow-shop_scheduling) (FSS) is a constrained case of JSS where every job uses every machine in the same order. The machines in FSS problems can often be seen as sequential operations to be executed on each job, as is the case in this particular demo.
 
 ![Demo Screenshot](_static/screenshot.png)
 
@@ -65,11 +65,11 @@ These are the parameters of the problem:
 - `M_(j,t)`:  the machine that processes task `t` of job `j`
 - `T_(j,i)`: the task that is processed by machine `i` for job `j`
 - `D_(j,t)`:  the processing duration that task `t` needs for job `j`
-- `V`:  maximum possible make-span
+- `V`:  maximum possible makespan
 
 ### Variables
 
-- `w`: a positive integer variable that defines the completion time (make-span)
+- `w`: a positive integer variable that defines the completion time (makespan)
 of the JSS
 - `x_(j_i)`: positive integer variables used to model start of each job `j` on
   machine `i`
@@ -77,7 +77,7 @@ of the JSS
 
 ### Objective
 
-The objective is to minimize the make-span (`w`) of the given FSS problem.
+The objective is to minimize the makespan (`w`) of the given FSS problem.
 
 ### Nonlinear Model
 
@@ -134,7 +134,7 @@ There are two cases:
   ![equation2_2](_static/eq2_2.png)
   Since these equations are applied to every pair of jobs, they guarantee that the jobs don't overlap on a machine.
 
-#### Make-Span Constraint
+#### Makespan Constraint
 In this demonstration, the maximum makespan can be defined by the user or it will be determined using a greedy heuristic. Placing an upper bound on the makespan improves the performance of the D-Wave sampler; however, if the upper bound is too low then the sampler may fail to find a feasible solution.
 
 

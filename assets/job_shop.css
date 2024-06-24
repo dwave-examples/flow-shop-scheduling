@@ -81,7 +81,6 @@ body {
     margin-left: 2rem;
 }
 
-
 h1, h2, h3, h4, h5, h6, td, th, span, a, p, label {
     font-family: "Helvetica Neue", sans-serif;
 }
@@ -103,7 +102,6 @@ h3 {
 
 h3.gantt-title {
     margin-bottom: 0;
-    margin-left: 4.6rem;
 }
 
 h4 {
@@ -166,11 +164,6 @@ th:last-child, td:last-child {
     flex: 1;
 }
 
-#columns {
-    display: flex;
-    flex: 1;
-}
-
 .left-column {
     display: flex;
 }
@@ -202,6 +195,11 @@ th:last-child, td:last-child {
     font-size: 13px;
 }
 
+div.dash-sk-circle {
+    height: 6rem;
+    width: 6rem;
+}
+
 .wait_time_graph > div, .patient_score_graph > div {
     height: 100% !important;
     width: 100% !important;
@@ -215,38 +213,37 @@ th:last-child, td:last-child {
     font-weight: bold;
 }
 
+.solution-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
 
 .gantt-chart-card {
     height: 100%;
     display: flex;
-    flex-flow: column;
+    flex-direction: column;
 }
 
-.gantt-div {
+.graph-wrapper,
+.graph-wrapper > div,
+.dash-graph,
+.loading-graph {
     height: 100%;
 }
 
-.gantt-chart-card > div {
-    height: 100%;
-}
-
-.gantt-chart-card-parent {
-    height: 100%;
-    flex: 1 1 auto;
-}
-
-.gantt-heading-button {
+.gantt-heading {
     display: flex;
     justify-content: space-between;
     align-items: end;
     margin-right: 20rem;
-    flex: 0 1 content;
+    margin-left: 4.3rem;
 }
 
 .table-row:nth-child(even) {
     background-color: #f2f2f2;
 }
-
 
 #header_wait_time_min, #header_care_score {
     display: table;
@@ -298,19 +295,6 @@ div.tab.tab--disabled {
     padding: 0 1.5rem 3rem;
 }
 
-#run-button,
-#cancel-button {
-    width: 100%;
-    font-size: 1.4rem;
-    line-height: 1.4rem;
-    padding: 1.8rem;
-    height: auto;
-    color: white;
-    transition: all 0.2s ease-in-out;
-    margin-bottom: 4rem;
-    border: none;
-}
-
 .left-column-collapse,
 .left-column-collapse:hover,
 .left-column-collapse:focus {
@@ -331,6 +315,20 @@ div.tab.tab--disabled {
     box-shadow: none;
 }
 
+#run-button,
+#cancel-button,
+.sort-button {
+    width: 100%;
+    font-size: 1.4rem;
+    line-height: 1.4rem;
+    padding: 1.8rem;
+    height: auto;
+    color: white;
+    transition: all 0.2s ease-in-out;
+    margin-bottom: 4rem;
+    border: none;
+}
+
 #run-button {
     background-color: var(--theme);
 }
@@ -345,6 +343,13 @@ div.tab.tab--disabled {
 
 #cancel-button:hover {
     background-color: var(--red-dark);
+}
+
+.sort-button {
+    width: auto;
+    margin: 0;
+    font-size: 1.2rem;
+    padding: 1.2rem 2.4rem;
 }
 
 .tab-fail {
@@ -401,7 +406,6 @@ div.tab.tab--disabled {
 }
 
 .details-collapse-wrapper {
-    margin-bottom: 2rem;
     overflow: hidden;
 }
 
@@ -418,8 +422,8 @@ div.tab.tab--disabled {
     margin-right: 4rem;
 }
 
-#highs-stats-make-span,
-#dwave-stats-make-span {
+#highs-stats-makespan,
+#dwave-stats-makespan {
     font-size: 2rem;
     font-weight: 400;
 }
@@ -433,6 +437,7 @@ div.tab.tab--disabled {
     margin-right: -0.3rem;
     transition: border-color 0.25s ease-in-out;
 }
+
 .details-collapse .collapse-arrow {
     transform: rotate(225deg) skew(165deg, 165deg);
     margin: 1.5rem 0 0 1.5rem;

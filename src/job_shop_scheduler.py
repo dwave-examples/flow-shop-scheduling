@@ -6,6 +6,7 @@ solve a Job Shop Scheduling problem using CQM.
 from __future__ import annotations
 
 import argparse
+from enum import Enum
 import sys
 import warnings
 
@@ -21,6 +22,16 @@ from utils.greedy import GreedyJobShop
 from utils.utils import print_cqm_stats, write_solution_to_file
 
 from dwave.optimization.generators import flow_shop_scheduling
+
+
+class SamplerType(Enum):
+    HYBRID = 0
+    HIGHS = 1
+
+
+class HybridSamplerType(Enum):
+    CQM = 0
+    NL = 1
 
 
 def generate_greedy_makespan(job_data: JobShopData, num_samples: int = 100) -> int:

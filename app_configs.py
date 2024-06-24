@@ -38,7 +38,7 @@ on the right.
 """
 
 CLASSICAL_TAB_LABEL = "Classical Results"
-DWAVE_TAB_LABEL = "Hybrid Solver Results"
+DWAVE_TAB_LABEL = "Quantum Hybrid Results"
 
 SHOW_CQM = True
 
