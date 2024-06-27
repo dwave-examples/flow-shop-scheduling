@@ -94,7 +94,7 @@ def generate_graph(visible: bool, type: str, index: int) -> html.Div:
     """Generates graph either hidden or visible."""
     return html.Div(
         id={"type": f"gantt-chart-{'visible' if visible else 'hidden'}-wrapper", "index": index},
-        className="" if visible else "display-none",
+        className="graph" if visible else "display-none",
         children=[
             dcc.Graph(
                 id={"type": f"gantt-chart-{type}", "index": index},
@@ -136,8 +136,8 @@ def generate_solution_tab(label: str, title: str, tab: str, index: int) -> dcc.T
                                         className="gantt-title",
                                     ),
                                     html.Button(
-                                        id={"type": "sort-button", "index": index},
-                                        className="sort-button",
+                                        id={"type": "gantt-heading-button", "index": index},
+                                        className="gantt-heading-button",
                                         children="Sort by start time",
                                         n_clicks=0
                                     ),
@@ -156,7 +156,7 @@ def generate_solution_tab(label: str, title: str, tab: str, index: int) -> dcc.T
                         [
                             html.Hr(),
                             html.Div(
-                                problem_details(tab, index+1),
+                                problem_details(tab, index),
                                 className="problem-details"
                             ),
                         ],
@@ -230,8 +230,34 @@ def generate_control_card() -> html.Div:
     )
 
 
+def generate_problem_details_table(table_rows: tuple[dict]) -> html.Tbody:
+    """Generate the problem details table.
+
+    Args:
+        table_rows: A tuple of dicts where each dict represents a row in the table.
+
+    Returns:
+        html.Tbody: Tbody containing table rows for problem details.
+    """
+    rows = []
+    for table_row in table_rows:
+        row = []
+        for label, cell in table_row.items():
+            row += [label, cell]
+        rows.append(row)
+
+    return html.Tbody(
+        children=[
+            html.Tr(
+                [html.Td(cell) for cell in row]
+            ) for row in rows
+        ],
+    ),
+
+
+
 def problem_details(solver: str, index: int) -> html.Div:
-    """generate the problem details section.
+    """Generate the problem details section.
 
     Args:
         solver: Which solver tab to generate the section for. Either "dwave" or "highs"
@@ -265,36 +291,7 @@ def problem_details(solver: str, index: int) -> html.Div:
                         children=[
                             html.Table(
                                 className="solution-stats-table",
-                                children=[
-                                    html.Tbody(
-                                        children=[
-                                            html.Tr(
-                                                [
-                                                    html.Td("Scenario"),
-                                                    html.Td(id=f"{solver}-stats-scenario"),
-                                                    html.Td("Solver"),
-                                                    html.Td(id=f"{solver}-stats-solver"),
-                                                ]
-                                            ),
-                                            html.Tr(
-                                                [
-                                                    html.Td("Number of Jobs"),
-                                                    html.Td(id=f"{solver}-stats-jobs"),
-                                                    html.Td("Solver Time Limit (s)"),
-                                                    html.Td(id=f"{solver}-stats-time-limit"),
-                                                ]
-                                            ),
-                                            html.Tr(
-                                                [
-                                                    html.Td("Number of Operations"),
-                                                    html.Td(id=f"{solver}-stats-resources"),
-                                                    html.Td("Wall Clock Time (s)"),
-                                                    html.Td(id=f"{solver}-stats-wall-clock-time"),
-                                                ]
-                                            ),
-                                        ],
-                                    ),
-                                ],
+                                id=f"{solver}-solution-stats-table",
                             ),
                         ],
                     ),
@@ -362,27 +359,30 @@ def set_html(app):
                                                                 "Unscheduled Jobs and Operations",
                                                                 className="gantt-title",
                                                             ),
+                                                            html.Button(
+                                                                id={"type": "gantt-heading-button", "index": 0},
+                                                                className="gantt-heading-button",
+                                                                children="Show Conflicts",
+                                                                n_clicks=0
+                                                            ),
                                                         ],
                                                     ),
                                                     dcc.Loading(
                                                         id="loading-icon-input",
-                                                        parent_className="loading-graph",
+                                                        parent_className="graph-wrapper",
                                                         type="circle",
                                                         color=THEME_COLOR_SECONDARY,
                                                         children=[
-                                                            dcc.Graph(
-                                                                id="unscheduled-gantt-chart",
-                                                                responsive=True,
-                                                                config={"displayModeBar": False},
-                                                            ),
+                                                            *generate_graph(True, "unscheduled", 0),
+                                                            *generate_graph(False, "conflicts", 0),
                                                         ],
                                                     ),
                                                 ],
                                             ),
                                         ],
                                     ),
-                                    *generate_solution_tab(DWAVE_TAB_LABEL, "Quantum Hybrid Solver", "dwave", 0),
-                                    *generate_solution_tab(CLASSICAL_TAB_LABEL, "Classical Solver (HiGHS)", "highs", 1),
+                                    *generate_solution_tab(DWAVE_TAB_LABEL, "Quantum Hybrid Solver", "dwave", 1),
+                                    *generate_solution_tab(CLASSICAL_TAB_LABEL, "Classical Solver (HiGHS)", "highs", 2),
                                 ],
                             )
                         ],

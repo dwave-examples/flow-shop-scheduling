@@ -221,9 +221,8 @@ div.dash-sk-circle {
 }
 
 .graph-wrapper,
-.graph-wrapper > div,
-.dash-graph,
-.loading-graph {
+.graph,
+.dash-graph {
     height: 100%;
 }
 
@@ -298,7 +297,7 @@ div.tab.tab--disabled {
 
 #run-button,
 #cancel-button,
-.sort-button {
+.gantt-heading-button {
     width: 100%;
     font-size: 1.4rem;
     line-height: 1.4rem;
@@ -311,13 +310,13 @@ div.tab.tab--disabled {
 }
 
 #run-button,
-.sort-button,
-.sort-button:focus {
+.gantt-heading-button,
+.gantt-heading-button:focus {
     background-color: var(--theme);
 }
 
 #run-button:hover,
-.sort-button:hover {
+.gantt-heading-button:hover {
     filter: brightness(80%);
 }
 
@@ -329,7 +328,7 @@ div.tab.tab--disabled {
     background-color: var(--red-dark);
 }
 
-.sort-button {
+.gantt-heading-button {
     width: auto;
     margin: 0;
     font-size: 1.2rem;
