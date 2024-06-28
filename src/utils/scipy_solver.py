@@ -25,15 +25,16 @@ class SciPyCQMSolver:
 
     See :func:`scipy.optimize.milp()`
     """
+
     @staticmethod
     def iter_constraints(
-            cqm: dimod.ConstrainedQuadraticModel,
-            ) -> typing.Iterator[scipy.optimize.LinearConstraint]:
+        cqm: dimod.ConstrainedQuadraticModel,
+    ) -> typing.Iterator[scipy.optimize.LinearConstraint]:
         num_variables = cqm.num_variables()
 
         for comp in cqm.constraints.values():
             if comp.sense is dimod.sym.Sense.Eq:
-                lb = ub = comp.rhs - comp.lhs.offset # move offset (if not 0) to rhs of constraint
+                lb = ub = comp.rhs - comp.lhs.offset  # move offset (if not 0) to rhs of constraint
             elif comp.sense is dimod.sym.Sense.Ge:
                 lb = comp.rhs - comp.lhs.offset
                 ub = +float("inf")
@@ -49,13 +50,13 @@ class SciPyCQMSolver:
 
             # Create the LinearConstraint.
             # We save A as a csr matrix to save on a bit of memory
-            yield scipy.optimize.LinearConstraint(
-                scipy.sparse.csr_array([A]), lb=lb, ub=ub)
+            yield scipy.optimize.LinearConstraint(scipy.sparse.csr_array([A]), lb=lb, ub=ub)
 
     @staticmethod
-    def sample_cqm(cqm: dimod.ConstrainedQuadraticModel,
-                   time_limit: float = float('inf'),
-                   ) -> dimod.SampleSet:
+    def sample_cqm(
+        cqm: dimod.ConstrainedQuadraticModel,
+        time_limit: float = float("inf"),
+    ) -> dimod.SampleSet:
         """Use HiGHS via SciPy to solve a constrained quadratic model.
 
         Note that HiGHS requires the objective and constraints to be
@@ -83,11 +84,13 @@ class SciPyCQMSolver:
 
         # Check that we're a linear model
         if not cqm.objective.is_linear():
-            raise ValueError("scipy.optimize.milp() does not support objectives "
-                             "with quadratic interactions")
+            raise ValueError(
+                "scipy.optimize.milp() does not support objectives " "with quadratic interactions"
+            )
         if not all(comp.lhs.is_linear() for comp in cqm.constraints.values()):
-            raise ValueError("scipy.optimize.milp() does not support constraints "
-                             "with quadratic interactions")
+            raise ValueError(
+                "scipy.optimize.milp() does not support constraints " "with quadratic interactions"
+            )
 
         num_variables = cqm.num_variables()
 
@@ -118,12 +121,13 @@ class SciPyCQMSolver:
         constraints = list(SciPyCQMSolver.iter_constraints(cqm))
 
         t = time.perf_counter()
-        solution = scipy.optimize.milp(c,
-                                       integrality=integrality,
-                                       bounds=scipy.optimize.Bounds(lb=lb, ub=ub),
-                                       options=dict(time_limit=time_limit),
-                                       constraints=constraints,
-                                       )
+        solution = scipy.optimize.milp(
+            c,
+            integrality=integrality,
+            bounds=scipy.optimize.Bounds(lb=lb, ub=ub),
+            options=dict(time_limit=time_limit),
+            constraints=constraints,
+        )
         run_time = time.perf_counter() - t
 
         # If we're infeasible, return an empty solution
@@ -133,6 +137,7 @@ class SciPyCQMSolver:
         # Otherwise we can just read the solution out and convert it into a
         # dimod sampleset
         sampleset = dimod.SampleSet.from_samples_cqm(
-            (solution.x, cqm.variables), cqm, info=dict(run_time=run_time))
+            (solution.x, cqm.variables), cqm, info=dict(run_time=run_time)
+        )
 
         return sampleset

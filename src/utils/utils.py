@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from functools import cache
 import os
 from collections import defaultdict
+from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Union
 
 import numpy as np
-
 from dimod import BINARY, INTEGER, ConstrainedQuadraticModel, sym
 from tabulate import tabulate
 
@@ -200,6 +199,7 @@ def read_or_library_instance(instance_path: Union[Path, str]) -> array_like:
 
     return load_or_library_instances(instance_path)[instance_label]
 
+
 @cache
 def load_or_library_instances(instance_path: Union[Path, str]) -> list[dict]:
     """Read the OR library formatted Flow Shop Schedule problems file.
@@ -216,7 +216,6 @@ def load_or_library_instances(instance_path: Union[Path, str]) -> list[dict]:
     num_jobs = num_machines = None
     expect_problem = expect_label = False
 
-
     def _store_instance(processing_times):
         """Store processing_times as instance."""
         # stored as num_jobs x num_machines
@@ -226,7 +225,6 @@ def load_or_library_instances(instance_path: Union[Path, str]) -> list[dict]:
         processing_times_array = np.array(processing_times).T
         instances[label] = processing_times_array
         processing_times.clear()
-
 
     with open(instance_path) as f:
         for line in f:

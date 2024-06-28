@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 from collections.abc import Iterable
+from pathlib import Path
 from typing import TYPE_CHECKING, Union
 
 sys.path.append("./src")
@@ -94,7 +94,6 @@ class JobShopData:
         """
         return self._resource_names or list(range(len(self.processing_times)))
 
-
     @property
     def job_tasks(self) -> dict:
         """Returns the tasks in the data, grouped by job.
@@ -139,7 +138,9 @@ class JobShopData:
         """
         self._resources.add(resource)
 
-    def add_task_from_data(self, resource: str, job: str, duration: int, position: int = None) -> None:
+    def add_task_from_data(
+        self, resource: str, job: str, duration: int, position: int = None
+    ) -> None:
         """Adds a task to the dataset.
 
         Args:
@@ -334,4 +335,6 @@ class JobShopData:
 
         for machine, machine_times in enumerate(self.processing_times):
             for job, duration in enumerate(machine_times):
-                self.add_task(Task(str(job), duration=duration, resource=self._resource_names[machine]))
+                self.add_task(
+                    Task(str(job), duration=duration, resource=self._resource_names[machine])
+                )
