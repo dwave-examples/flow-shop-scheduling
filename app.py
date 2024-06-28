@@ -37,7 +37,7 @@ from typing import NamedTuple
 import dash
 import diskcache
 import plotly.graph_objs as go
-from dash import DiskcacheManager, ctx, MATCH
+from dash import MATCH, DiskcacheManager, ctx
 from dash.dependencies import ClientsideFunction, Input, Output, State
 from dash.exceptions import PreventUpdate
 
@@ -54,8 +54,9 @@ background_callback_manager = DiskcacheManager(cache)
 # the `multiprocessing` library, but its fork, `multiprocess` still hasn't caught up.
 # (see docs: https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods)
 import multiprocess
+
 if multiprocess.get_start_method(allow_none=True) is None:
-    multiprocess.set_start_method('spawn')
+    multiprocess.set_start_method("spawn")
 
 from app_configs import (
     APP_TITLE,
@@ -251,7 +252,9 @@ def update_button_visibility(running_dwave: bool, running_classical: bool) -> tu
     ],
     prevent_initial_call=True,
 )
-def switch_gantt_chart(new_click: int, sort_button_text: str, visibleChart: list, hiddenChart: list) -> tuple[str, str, str]:
+def switch_gantt_chart(
+    new_click: int, sort_button_text: str, visibleChart: list, hiddenChart: list
+) -> tuple[str, str, str]:
     """Switch between the results plot sorted by job or by start time.
 
     Args:
@@ -265,24 +268,32 @@ def switch_gantt_chart(new_click: int, sort_button_text: str, visibleChart: list
         list: The new graph that should be hidden.
         str: The new text of the sort button.
     """
-    if ctx.triggered_id['index'] == 0:
+    if ctx.triggered_id["index"] == 0:
         button_text = "Show Conflicts" if sort_button_text == "Hide Conflicts" else "Hide Conflicts"
     else:
-        button_text = "Sort by job" if sort_button_text == "Sort by start time" else "Sort by start time"
+        button_text = (
+            "Sort by job" if sort_button_text == "Sort by start time" else "Sort by start time"
+        )
     return hiddenChart, visibleChart, button_text
 
 
-def get_table_rows(scenario: str, solver: str, model_data: JobShopData, time_limit: int, wall_clock_time: float) -> tuple[dict]:
+def get_table_rows(
+    scenario: str, solver: str, model_data: JobShopData, time_limit: int, wall_clock_time: float
+) -> tuple[dict]:
     """Returns tuple of dicts where each dict represents a row in the problem details table."""
     return (
         {"Scenario": scenario, "Solver": solver},
         {"Number of Jobs": model_data.get_job_count(), "Solver Time Limit": f"{time_limit}s"},
-        {"Number of Operations": model_data.get_resource_count(), "Wall Clock Time": f"{round(wall_clock_time, 2)}s"}
+        {
+            "Number of Operations": model_data.get_resource_count(),
+            "Wall Clock Time": f"{round(wall_clock_time, 2)}s",
+        },
     )
 
 
 class RunOptimizationHybridReturn(NamedTuple):
     """Return type for the ``run_optimization_hybrid`` callback function."""
+
     gantt_chart_jobsort: go.Figure
     gantt_chart_startsort: go.Figure
     dwave_makespan: str
@@ -292,6 +303,7 @@ class RunOptimizationHybridReturn(NamedTuple):
     dwave_tab_class: str
     dwave_tab_label: str
     running_dwave: bool
+
 
 @app.callback(
     Output({"type": "gantt-chart-jobsort", "index": 1}, "figure"),
@@ -363,24 +375,31 @@ def run_optimization_hybrid(
     fig_jobsort = generate_gantt_chart(results, sort_by="JobInt")
     fig_startsort = generate_gantt_chart(results, sort_by="Start")
 
-    table_rows = get_table_rows(scenario, "NL Solver" if running_nl else "CQM Solver", model_data, time_limit, time.perf_counter() - start)
+    table_rows = get_table_rows(
+        scenario,
+        "NL Solver" if running_nl else "CQM Solver",
+        model_data,
+        time_limit,
+        time.perf_counter() - start,
+    )
     solution_stats_table = generate_problem_details_table(table_rows)
 
     return RunOptimizationHybridReturn(
-        gantt_chart_jobsort = fig_jobsort,
-        gantt_chart_startsort = fig_startsort,
-        dwave_makespan = f"Makespan: {int(results['Finish'].max())}",
-        dwave_solution_stats_table = solution_stats_table,
-        dwave_tab_disabled = False,
-        dwave_gantt_title_span = " (NL)" if running_nl else " (CQM)",
-        dwave_tab_class = "tab-success",
-        dwave_tab_label = DWAVE_TAB_LABEL,
-        running_dwave = False
+        gantt_chart_jobsort=fig_jobsort,
+        gantt_chart_startsort=fig_startsort,
+        dwave_makespan=f"Makespan: {int(results['Finish'].max())}",
+        dwave_solution_stats_table=solution_stats_table,
+        dwave_tab_disabled=False,
+        dwave_gantt_title_span=" (NL)" if running_nl else " (CQM)",
+        dwave_tab_class="tab-success",
+        dwave_tab_label=DWAVE_TAB_LABEL,
+        running_dwave=False,
     )
 
 
 class RunOptimizationScipyReturn(NamedTuple):
     """Return type for the ``run_optimization_scipy`` callback function."""
+
     gantt_chart_jobsort: go.Figure
     gantt_chart_startsort: go.Figure
     highs_makespan: str
@@ -390,6 +409,7 @@ class RunOptimizationScipyReturn(NamedTuple):
     highs_tab_class: str
     highs_tab_label: str
     running_classical: bool
+
 
 @app.callback(
     Output({"type": "gantt-chart-jobsort", "index": 2}, "figure"),
@@ -440,7 +460,9 @@ def run_optimization_scipy(
         raise PreventUpdate
 
     if SamplerType.HIGHS.value not in solvers:
-        return RunOptimizationScipyReturn(*([dash.no_update] * 6), "tab", CLASSICAL_TAB_LABEL, False)
+        return RunOptimizationScipyReturn(
+            *([dash.no_update] * 6), "tab", CLASSICAL_TAB_LABEL, False
+        )
 
     start = time.perf_counter()
     model_data = JobShopData()
@@ -454,37 +476,39 @@ def run_optimization_scipy(
         solver_time_limit=time_limit,
     )
 
-    table_rows = get_table_rows(scenario, "HiGHS", model_data, time_limit, time.perf_counter() - start)
+    table_rows = get_table_rows(
+        scenario, "HiGHS", model_data, time_limit, time.perf_counter() - start
+    )
     solution_stats_table = generate_problem_details_table(table_rows)
     makespan = f"Makespan: {0 if results.empty else int(results['Finish'].max())}"
 
     if results.empty:
         fig = get_empty_figure("No solution found for Classical solver")
         return RunOptimizationScipyReturn(
-            gantt_chart_jobsort = fig,
-            gantt_chart_startsort = fig,
-            highs_makespan = makespan,
-            highs_solution_stats_table = solution_stats_table,
-            highs_tab_disabled = False,
-            sort_button_style = {"display": "none"},
-            highs_tab_class = "tab-fail",
-            highs_tab_label = CLASSICAL_TAB_LABEL,
-            running_classical = False
+            gantt_chart_jobsort=fig,
+            gantt_chart_startsort=fig,
+            highs_makespan=makespan,
+            highs_solution_stats_table=solution_stats_table,
+            highs_tab_disabled=False,
+            sort_button_style={"display": "none"},
+            highs_tab_class="tab-fail",
+            highs_tab_label=CLASSICAL_TAB_LABEL,
+            running_classical=False,
         )
 
     fig_jobsort = generate_gantt_chart(results, sort_by="JobInt")
     fig_startsort = generate_gantt_chart(results, sort_by="Start")
 
     return RunOptimizationScipyReturn(
-        gantt_chart_jobsort = fig_jobsort,
-        gantt_chart_startsort = fig_startsort,
-        highs_makespan = makespan,
-        highs_solution_stats_table = solution_stats_table,
-        highs_tab_disabled = False,
-        sort_button_style = {},
-        highs_tab_class = "tab-success",
-        highs_tab_label = CLASSICAL_TAB_LABEL,
-        running_classical = False
+        gantt_chart_jobsort=fig_jobsort,
+        gantt_chart_startsort=fig_startsort,
+        highs_makespan=makespan,
+        highs_solution_stats_table=solution_stats_table,
+        highs_tab_disabled=False,
+        sort_button_style={},
+        highs_tab_class="tab-success",
+        highs_tab_label=CLASSICAL_TAB_LABEL,
+        running_classical=False,
     )
 
 

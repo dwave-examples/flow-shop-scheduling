@@ -3,25 +3,26 @@ This module contains the JobShopSchedulingCQM class, which is used to build and
 solve a Job Shop Scheduling problem using CQM.
 
 """
+
 from __future__ import annotations
 
 import argparse
-from enum import Enum
 import sys
 import warnings
+from enum import Enum
 
 import pandas as pd
 from dimod import Binary, ConstrainedQuadraticModel, Integer
 from dwave.system import LeapHybridCQMSampler, LeapHybridNLSampler
 
 sys.path.append("./src")
-import utils.scipy_solver as scipy_solver
+from dwave.optimization.generators import flow_shop_scheduling
+
 import utils.plot_schedule as job_plotter
+import utils.scipy_solver as scipy_solver
 from model_data import JobShopData
 from utils.greedy import GreedyJobShop
 from utils.utils import print_cqm_stats, write_solution_to_file
-
-from dwave.optimization.generators import flow_shop_scheduling
 
 
 class SamplerType(Enum):
@@ -152,7 +153,8 @@ class JobShopSchedulingModel:
                 machine_curr = curr_task.resource
                 machine_prev = prev_task.resource
                 self.cqm.add_constraint(
-                    self._x[(job, machine_curr)] - self._x[(job, machine_prev)] >= prev_task.duration,
+                    self._x[(job, machine_curr)] - self._x[(job, machine_prev)]
+                    >= prev_task.duration,
                     label="pj{}_m{}".format(job, machine_curr),
                 )
 
