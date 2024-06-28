@@ -145,20 +145,6 @@ def update_solvers_selected(
     raise PreventUpdate
 
 
-class UpdateTabLoadingStateReturn(NamedTuple):
-    """Return type for the ``update_tab_loading_state`` callback function."""
-    dwave_tab_label: str
-    dwave_tab_disabled: bool
-    dwave_tab_class: str
-    running_dwave: bool
-    highs_tab_label: str
-    highs_tab_disabled: bool
-    highs_tab_class: str
-    running_classical: bool
-    run_button_class: str
-    cancel_button_class: str
-    tabs_value: str
-
 @app.callback(
     Output("dwave-tab", "label", allow_duplicate=True),
     Output("dwave-tab", "disabled", allow_duplicate=True),
@@ -179,7 +165,7 @@ class UpdateTabLoadingStateReturn(NamedTuple):
 )
 def update_tab_loading_state(
     run_click: int, cancel_click: int, solvers: list[str]
-) -> UpdateTabLoadingStateReturn:
+) -> tuple[str, bool, str, bool, str, bool, str, bool, str, str, str]:
     """Updates the tab loading state after the run button
     or cancel button has been clicked.
 
@@ -189,24 +175,22 @@ def update_tab_loading_state(
         solvers (list[str]): The list of selected solvers.
 
     Returns:
-        A NamedTuple (UpdateTabLoadingStateReturn) containing all outputs to be used when updating the HTML
-        template (in ``dash_html.py``). These are:
-            str: The label for the D-Wave tab.
-            bool: True if D-Wave tab should be disabled, False otherwise.
-            str: Class name for the D-Wave tab.
-            bool: Whether Hybrid is running.
-            str: The label for the Classical tab.
-            bool: True if Classical tab should be disabled, False otherwise.
-            str: Class name for the Classical tab.
-            bool: Whether HiGHS is running.
-            str: Run button class.
-            str: Cancel button class.
-            str: The value of the tab that should be active.
+        str: The label for the D-Wave tab.
+        bool: True if D-Wave tab should be disabled, False otherwise.
+        str: Class name for the D-Wave tab.
+        bool: Whether Hybrid is running.
+        str: The label for the Classical tab.
+        bool: True if Classical tab should be disabled, False otherwise.
+        str: Class name for the Classical tab.
+        bool: Whether HiGHS is running.
+        str: Run button class.
+        str: Cancel button class.
+        str: The value of the tab that should be active.
     """
 
     if ctx.triggered_id == "run-button" and run_click > 0:
         running = ("Loading...", True, "tab", True)
-        return UpdateTabLoadingStateReturn(
+        return (
             *(running if SamplerType.HYBRID.value in solvers else [dash.no_update] * 4),
             *(running if SamplerType.HIGHS.value in solvers else [dash.no_update] * 4),
             "display-none",
@@ -215,18 +199,15 @@ def update_tab_loading_state(
         )
 
     if ctx.triggered_id == "cancel-button" and cancel_click > 0:
-        return UpdateTabLoadingStateReturn(
-            dwave_tab_label=DWAVE_TAB_LABEL,
-            dwave_tab_disabled=dash.no_update,
-            dwave_tab_class=dash.no_update,
-            running_dwave=False,
-            highs_tab_label=CLASSICAL_TAB_LABEL,
-            highs_tab_disabled=dash.no_update,
-            highs_tab_class=dash.no_update,
-            running_classical=False,
-            run_button_class="",
-            cancel_button_class="display-none",
-            tabs_value=dash.no_update,
+        not_running = (dash.no_update, dash.no_update, False)
+        return (
+            DWAVE_TAB_LABEL,
+            *not_running,
+            CLASSICAL_TAB_LABEL,
+            *not_running,
+            "",
+            "display-none",
+            dash.no_update,
         )
     raise PreventUpdate
 
