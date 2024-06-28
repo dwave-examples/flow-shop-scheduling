@@ -105,7 +105,7 @@ class JobShopSchedulingModel:
 
     def define_cqm_variables(self) -> None:
         """Define CQM variables."""
-        # Define make span as an integer variable
+        # Define makespan as an integer variable
         self._makespan_var = Integer("makespan", lower_bound=0, upper_bound=self.max_makespan)
 
         # Define integer variable for start time of using machine i for job j

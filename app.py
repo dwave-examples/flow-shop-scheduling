@@ -291,6 +291,15 @@ def switch_gantt_chart(new_click: int, sort_button_text: str, visibleChart: list
     return hiddenChart, visibleChart, button_text
 
 
+def get_table_rows(scenario: str, solver: str, model_data: JobShopData, time_limit: int, wall_clock_time: float) -> tuple[dict]:
+    """Returns tuple of dicts where each dict represents a row in the problem details table."""
+    return (
+        {"Scenario": scenario, "Solver": solver},
+        {"Number of Jobs": model_data.get_job_count(), "Solver Time Limit": f"{time_limit}s"},
+        {"Number of Operations": model_data.get_resource_count(), "Wall Clock Time": f"{round(wall_clock_time, 2)}s"}
+    )
+
+
 class RunOptimizationHybridReturn(NamedTuple):
     """Return type for the ``run_optimization_hybrid`` callback function."""
     gantt_chart_jobsort: go.Figure
@@ -373,11 +382,7 @@ def run_optimization_hybrid(
     fig_jobsort = generate_gantt_chart(results, sort_by="JobInt")
     fig_startsort = generate_gantt_chart(results, sort_by="Start")
 
-    table_rows = (
-        {"Scenario": scenario, "Solver": "NL Solver" if running_nl else "CQM Solver"},
-        {"Number of Jobs": model_data.get_job_count(), "Solver Time Limit": f"{time_limit}s"},
-        {"Number of Operations": model_data.get_resource_count(), "Wall Clock Time": f"{round(time.perf_counter() - start, 2)}s"}
-    )
+    table_rows = get_table_rows(scenario, "NL Solver" if running_nl else "CQM Solver", model_data, time_limit, time.perf_counter() - start)
     solution_stats_table = generate_problem_details_table(table_rows)
 
     return RunOptimizationHybridReturn(
@@ -468,11 +473,7 @@ def run_optimization_scipy(
         solver_time_limit=time_limit,
     )
 
-    table_rows = (
-        {"Scenario": scenario, "Solver": "HiGHS"},
-        {"Number of Jobs": model_data.get_job_count(), "Solver Time Limit": f"{time_limit}s"},
-        {"Number of Operations": model_data.get_resource_count(), "Wall Clock Time": f"{round(time.perf_counter() - start, 2)}s"}
-    )
+    table_rows = get_table_rows(scenario, "HiGHS", model_data, time_limit, time.perf_counter() - start)
     solution_stats_table = generate_problem_details_table(table_rows)
     makespan = f"Makespan: {0 if results.empty else int(results['Finish'].max())}"
 

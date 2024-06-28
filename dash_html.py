@@ -90,6 +90,7 @@ def checklist(label: str, id: str, options: list) -> html.Div:
         ],
     )
 
+
 def generate_graph(visible: bool, type: str, index: int) -> html.Div:
     """Generates graph either hidden or visible."""
     return html.Div(
