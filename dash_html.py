@@ -51,7 +51,7 @@ SAMPLER_TYPES = {
     SamplerType.HYBRID: "Quantum Hybrid" if SHOW_CQM else "Quantum Hybrid (NL)",
     SamplerType.HIGHS: "Classical (HiGHS)",
 }
-HYBRID_SAMPLER_TYPES = {HybridSamplerType.NL: "NL", HybridSamplerType.CQM: "CQM"}
+HYBRID_SAMPLER_TYPES = {HybridSamplerType.NL: "Nonlinear (NL)", HybridSamplerType.CQM: "Constraint Quadratic Model (CQM"}
 
 
 def description_card():

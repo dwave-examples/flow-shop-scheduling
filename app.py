@@ -131,14 +131,14 @@ def toggle_left_column(collapse_trigger: int, to_collapse_class: str) -> str:
 )
 def update_solvers_selected(
     selected_solvers: list[int],
-) -> list[dict]:
+) -> str:
     """Hide NL/CQM selector when Hybrid is unselected. Not applicable when SHOW_CQM is False.
 
     Args:
         selected_solvers (list[int]): Currently selected solvers.
 
     Returns:
-        list: Updated list of solver checkbox options.
+        str: Class name for hybrid select wrapper.
     """
     if SHOW_CQM:
         return "" if SamplerType.HYBRID.value in selected_solvers else "display-none"
