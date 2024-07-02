@@ -31,8 +31,8 @@ class SamplerType(Enum):
 
 
 class HybridSamplerType(Enum):
-    CQM = 0
-    NL = 1
+    NL = 0
+    CQM = 1
 
 
 def generate_greedy_makespan(job_data: JobShopData, num_samples: int = 100) -> int:

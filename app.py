@@ -277,32 +277,18 @@ def switch_gantt_chart(
     return hiddenChart, visibleChart, button_text
 
 
-def get_table_rows(
-    scenario: str, solver: str, model_data: JobShopData, time_limit: int, wall_clock_time: float
-) -> tuple[dict]:
-    """Returns tuple of dicts where each dict represents a row in the problem details table."""
-    return (
-        {"Scenario": scenario, "Solver": solver},
-        {"Number of Jobs": model_data.get_job_count(), "Solver Time Limit": f"{time_limit}s"},
-        {
-            "Number of Operations": model_data.get_resource_count(),
-            "Wall Clock Time": f"{round(wall_clock_time, 2)}s",
-        },
-    )
-
-
 class RunOptimizationHybridReturn(NamedTuple):
     """Return type for the ``run_optimization_hybrid`` callback function."""
 
-    gantt_chart_jobsort: go.Figure
-    gantt_chart_startsort: go.Figure
-    dwave_makespan: str
-    dwave_solution_stats_table: list
-    dwave_tab_disabled: bool
-    dwave_gantt_title_span: str
-    dwave_tab_class: str
-    dwave_tab_label: str
-    running_dwave: bool
+    gantt_chart_jobsort: go.Figure = dash.no_update
+    gantt_chart_startsort: go.Figure = dash.no_update
+    dwave_makespan: str = dash.no_update
+    dwave_solution_stats_table: list = dash.no_update
+    dwave_tab_disabled: bool = dash.no_update
+    dwave_gantt_title_span: str = dash.no_update
+    dwave_tab_class: str = dash.no_update
+    dwave_tab_label: str = dash.no_update
+    running_dwave: bool = dash.no_update
 
 
 @app.callback(
@@ -355,7 +341,11 @@ def run_optimization_hybrid(
         raise PreventUpdate
 
     if SamplerType.HYBRID.value not in solvers:
-        return RunOptimizationHybridReturn(*([dash.no_update] * 6), "tab", DWAVE_TAB_LABEL, False)
+        return RunOptimizationHybridReturn(
+            dwave_tab_class="tab",
+            dwave_tab_label=DWAVE_TAB_LABEL,
+            running_dwave=False
+        )
 
     start = time.perf_counter()
     model_data = JobShopData()
@@ -375,14 +365,14 @@ def run_optimization_hybrid(
     fig_jobsort = generate_gantt_chart(results, sort_by="JobInt")
     fig_startsort = generate_gantt_chart(results, sort_by="Start")
 
-    table_rows = get_table_rows(
+    solution_stats_table = generate_problem_details_table(
         scenario,
         "NL Solver" if running_nl else "CQM Solver",
-        model_data,
+        model_data.get_job_count(),
         time_limit,
+        model_data.get_resource_count(),
         time.perf_counter() - start,
     )
-    solution_stats_table = generate_problem_details_table(table_rows)
 
     return RunOptimizationHybridReturn(
         gantt_chart_jobsort=fig_jobsort,
@@ -400,15 +390,15 @@ def run_optimization_hybrid(
 class RunOptimizationScipyReturn(NamedTuple):
     """Return type for the ``run_optimization_scipy`` callback function."""
 
-    gantt_chart_jobsort: go.Figure
-    gantt_chart_startsort: go.Figure
-    highs_makespan: str
-    highs_solution_stats_table: list
-    highs_tab_disabled: bool
-    sort_button_style: dict
-    highs_tab_class: str
-    highs_tab_label: str
-    running_classical: bool
+    gantt_chart_jobsort: go.Figure = dash.no_update
+    gantt_chart_startsort: go.Figure = dash.no_update
+    highs_makespan: str = dash.no_update
+    highs_solution_stats_table: list = dash.no_update
+    highs_tab_disabled: bool = dash.no_update
+    sort_button_style: dict = dash.no_update
+    highs_tab_class: str = dash.no_update
+    highs_tab_label: str = dash.no_update
+    running_classical: bool = dash.no_update
 
 
 @app.callback(
@@ -461,7 +451,9 @@ def run_optimization_scipy(
 
     if SamplerType.HIGHS.value not in solvers:
         return RunOptimizationScipyReturn(
-            *([dash.no_update] * 6), "tab", CLASSICAL_TAB_LABEL, False
+            highs_tab_class="tab",
+            highs_tab_label=CLASSICAL_TAB_LABEL,
+            running_classical=False
         )
 
     start = time.perf_counter()
@@ -476,10 +468,14 @@ def run_optimization_scipy(
         solver_time_limit=time_limit,
     )
 
-    table_rows = get_table_rows(
-        scenario, "HiGHS", model_data, time_limit, time.perf_counter() - start
+    solution_stats_table = generate_problem_details_table(
+        scenario,
+        "HiGHS",
+        model_data.get_job_count(),
+        time_limit,
+        model_data.get_resource_count(),
+        time.perf_counter() - start
     )
-    solution_stats_table = generate_problem_details_table(table_rows)
     makespan = f"Makespan: {0 if results.empty else int(results['Finish'].max())}"
 
     if results.empty:

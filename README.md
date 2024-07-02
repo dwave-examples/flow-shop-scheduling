@@ -102,7 +102,7 @@ Above: a solution to a flow shop scheduling problem with 3 jobs on 3 machines.
 ![fss_example1](_static/fss_example1.png)
 Above: an improved solution to the same problem with a permutated job order.
 
-### Constraint Quadratic Model
+### Constrained Quadratic Model
 The constrained quadratic model (CQM) requires adding a set of constraints to ensure that tasks
 are executed in order and that no single machine is used by different jobs at the same time.
 
