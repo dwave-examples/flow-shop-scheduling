@@ -379,7 +379,7 @@ def set_html(app):
                                                         id="loading-icon-input",
                                                         parent_className="graph-wrapper",
                                                         type="circle",
-                                                        delay_show=200,
+                                                        delay_show=300,
                                                         color=THEME_COLOR_SECONDARY,
                                                         children=[
                                                             generate_graph(True, "unscheduled", 0),

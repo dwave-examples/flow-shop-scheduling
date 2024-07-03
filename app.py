@@ -407,7 +407,7 @@ class RunOptimizationScipyReturn(NamedTuple):
     Output("highs-stats-makespan", "children"),
     Output("highs-solution-stats-table", "children"),
     Output("highs-tab", "disabled"),
-    Output({"type": "gantt-heading-button", "index": 1}, "style"),
+    Output({"type": "gantt-heading-button", "index": 2}, "style"),
     Output("highs-tab", "className"),
     Output("highs-tab", "label"),
     Output("running-classical", "data"),

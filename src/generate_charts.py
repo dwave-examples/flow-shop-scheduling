@@ -153,6 +153,19 @@ def generate_gantt_chart(
         category_orders={COLOR_LABEL: color_labels},
     )
 
+    # Update legend to remove conflict text and duplicates.
+    unique_labels = set()
+    for i, trace in enumerate(fig.select_traces()):
+        label = trace.legendgroup.split(",")[0]
+        if label not in unique_labels:
+            trace.update({"name": label, "legendrank": i})
+            unique_labels.add(label)
+        else:
+            fig.update_traces({"showlegend": False}, {"name": label})
+            trace.update({"name": label, "legendrank": i})
+
+    fig.update_legends({"title": {"text": COLOR_LABEL}})  # Update legend title.
+
     for index, data in enumerate(fig.data):
         resource = data.name.split(",")[0]
         fig.data[index].x = [
