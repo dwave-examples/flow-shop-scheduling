@@ -35,6 +35,11 @@ class HybridSamplerType(Enum):
     CQM = 1
 
 
+class SchedulingMethodOptions(Enum):
+    JSS = 0
+    FSS = 1
+
+
 def generate_greedy_makespan(job_data: JobShopData, num_samples: int = 100) -> int:
     """This function generates random samples using the greedy algorithm; it will keep the
     top keep_pct percent of samples.

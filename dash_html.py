@@ -45,7 +45,7 @@ from app_configs import (
     THEME_COLOR_SECONDARY,
     THUMBNAIL,
 )
-from src.job_shop_scheduler import HybridSamplerType, SamplerType
+from src.job_shop_scheduler import HybridSamplerType, SamplerType, SchedulingMethodOptions
 
 SAMPLER_TYPES = {
     SamplerType.HYBRID: "Quantum Hybrid" if SHOW_CQM else "Quantum Hybrid (NL)",
@@ -55,13 +55,24 @@ HYBRID_SAMPLER_TYPES = {
     HybridSamplerType.NL: "Nonlinear (NL)",
     HybridSamplerType.CQM: "Constrained Quadratic Model (CQM)"
 }
+SCHEDULING_METHOD_OPTIONS = {
+    SchedulingMethodOptions.JSS: "Job Shop Scheduling (JSS)",
+    SchedulingMethodOptions.FSS: "Flow Shop Scheduling (FSS)"
+}
+scheduling_method_options = [
+    {"label": label, "value": scheduling_method_option.value}
+    for scheduling_method_option, label in SCHEDULING_METHOD_OPTIONS.items()
+]
 
 
 def description_card():
     """A Div containing dashboard title & descriptions."""
     return html.Div(
         id="description-card",
-        children=[html.H1(MAIN_HEADER), html.P(DESCRIPTION)],
+        children=[
+            html.H1(id="header", children=[MAIN_HEADER]),
+            html.P(id="description", children=[DESCRIPTION]),
+        ],
     )
 
 
@@ -313,7 +324,18 @@ def set_html(app):
             dcc.Store("running-dwave"),
             dcc.Store("running-classical"),
             # Banner
-            html.Div(id="banner", children=[html.Img(src=THUMBNAIL)]),
+            html.Div(
+                id="banner",
+                children=[
+                    html.Img(src=THUMBNAIL),
+                    dropdown(
+                        "",
+                        "scheduling-method",
+                        scheduling_method_options,
+                        "scheduling-method-wrapper",
+                    ),
+                ],
+            ),
             html.Div(
                 id="columns",
                 children=[

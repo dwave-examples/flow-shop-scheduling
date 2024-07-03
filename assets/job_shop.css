@@ -68,17 +68,30 @@ body {
 #banner {
     flex: 0 0 var(--banner-height);
     background-color: var(--theme);
+    padding: 0 2rem;
 
     display: flex;
     flex-direction: row;
     align-items: center;
+    justify-content: space-between;
 }
 
 #banner img {
     position: relative;
     height: 3rem;
     width: auto;
-    margin-left: 2rem;
+}
+
+#banner .Select-control,
+#banner .Select {
+    width: 30rem;
+    text-align: center;
+    font-size: 1.6rem;
+    line-height: 1.6rem;
+}
+
+#banner .VirtualizedSelectOption {
+    justify-content: center;
 }
 
 h1, h2, h3, h4, h5, h6, td, th, span, a, p, label {
@@ -128,6 +141,14 @@ label {
 
 #solver-select.hide-cqm label:first-child {
     display: none !important;
+}
+
+#scheduling-method-wrapper label {
+    margin-top: 0;
+}
+
+#scheduling-method-wrapper input[type='radio'] {
+    accent-color: var(--theme);
 }
 
 input[type="checkbox"] {

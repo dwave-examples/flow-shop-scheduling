@@ -62,14 +62,18 @@ from app_configs import (
     APP_TITLE,
     CLASSICAL_TAB_LABEL,
     DEBUG,
+    DESCRIPTION,
+    DESCRIPTION_FSS,
     DWAVE_TAB_LABEL,
+    MAIN_HEADER,
+    MAIN_HEADER_FSS,
     SCENARIOS,
     SHOW_CQM,
     THEME_COLOR,
     THEME_COLOR_SECONDARY,
 )
 from src.generate_charts import generate_gantt_chart, get_empty_figure, get_minimum_task_times
-from src.job_shop_scheduler import HybridSamplerType, SamplerType, run_shop_scheduler
+from src.job_shop_scheduler import HybridSamplerType, SamplerType, SchedulingMethodOptions, run_shop_scheduler
 from src.model_data import JobShopData
 
 app = dash.Dash(
@@ -120,6 +124,33 @@ def toggle_left_column(collapse_trigger: int, to_collapse_class: str) -> str:
         classes.remove("collapsed")
         return " ".join(classes)
     return to_collapse_class + " collapsed" if to_collapse_class else "collapsed"
+
+
+@app.callback(
+    Output("header", "children"),
+    Output("description", "children"),
+    [
+        Input("scheduling-method", "value"),
+    ],
+    prevent_initial_call=True,
+)
+def update_scheduling_method(scheduling_method: int) -> tuple[str, str]:
+    """Updates UI and scheduling method when changed.
+
+    Args:
+        scheduling_method (int): Scheduling method, either JSS or FSS.
+    """
+
+    if scheduling_method is SchedulingMethodOptions.JSS.value:
+        return (
+            MAIN_HEADER,
+            DESCRIPTION,
+        )
+
+    return (
+        MAIN_HEADER_FSS,
+        DESCRIPTION_FSS,
+    )
 
 
 @app.callback(

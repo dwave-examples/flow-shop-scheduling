@@ -29,9 +29,15 @@ THEME_COLOR_SECONDARY = "#2A7DE1"  # D-Wave blue default #2A7DE1
 
 THUMBNAIL = "assets/dwave_logo.svg"
 
-APP_TITLE = "FSS Demo"
-MAIN_HEADER = "Flow Shop Scheduling"
+APP_TITLE = "Shop Scheduling Demo"
+MAIN_HEADER = "Job Shop Scheduling"
 DESCRIPTION = """\
+Run the cargo-loading themed job shop scheduling (JSS) problem for several
+different scenarios. Each job must execute all operations listed
+on the right.
+"""
+MAIN_HEADER_FSS = "Flow Shop Scheduling"
+DESCRIPTION_FSS = """\
 Run the cargo-loading themed flow shop scheduling (FSS) problem for several
 different scenarios. Each job must execute, in order, all operations listed
 on the right.
