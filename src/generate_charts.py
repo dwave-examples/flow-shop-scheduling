@@ -161,8 +161,7 @@ def generate_gantt_chart(
             trace.update({"name": label, "legendrank": i})
             unique_labels.add(label)
         else:
-            fig.update_traces({"showlegend": False}, {"name": label})
-            trace.update({"name": label, "legendrank": i})
+            trace.update({"showlegend": False})
 
     fig.update_legends({"title": {"text": COLOR_LABEL}})  # Update legend title.
 
