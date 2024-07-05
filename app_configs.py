@@ -38,7 +38,7 @@ on the right.
 """
 
 CLASSICAL_TAB_LABEL = "Classical Results"
-DWAVE_TAB_LABEL = "Hybrid Solver Results"
+DWAVE_TAB_LABEL = "Quantum Hybrid Results"
 
 SHOW_CQM = True
 
@@ -58,10 +58,10 @@ SCENARIOS = {
     "Taillard 20x5": "tai20_5.txt",
     "Heller 20x10": "hel2",
     "Taillard 20x10": "tai20_10.txt",
-    "Reeves 20x10": "reC07",  #reC09, reC11
-    "Reeves 20x15": "reC13",  #reC15, reC17
+    "Reeves 20x10": "reC07",  # reC09, reC11
+    "Reeves 20x15": "reC13",  # reC15, reC17
     "Taillard 20x20": "tai20_20.txt",
-    "Reeves 30x10": "reC19",  #reC21, reC23
+    "Reeves 30x10": "reC19",  # reC21, reC23
     # "Reeves 30x15": "reC25",  #reC27, reC29
     # "Taillard 50x5": "tai50_5.txt",
     # "Reeves 50x10": "reC31",  #reC33, reC35

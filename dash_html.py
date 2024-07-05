@@ -38,14 +38,23 @@ from app_configs import (
     CLASSICAL_TAB_LABEL,
     DESCRIPTION,
     DWAVE_TAB_LABEL,
-    SHOW_CQM,
     MAIN_HEADER,
     SCENARIOS,
+    SHOW_CQM,
     SOLVER_TIME,
-    THUMBNAIL
+    THEME_COLOR_SECONDARY,
+    THUMBNAIL,
 )
+from src.job_shop_scheduler import HybridSamplerType, SamplerType
 
-SOLVER_OPTIONS = ["Quantum Hybrid (CQM)", "Quantum Hybrid (NL)", "Classical (HiGHS)"]
+SAMPLER_TYPES = {
+    SamplerType.HYBRID: "Quantum Hybrid" if SHOW_CQM else "Quantum Hybrid (NL)",
+    SamplerType.HIGHS: "Classical (HiGHS)",
+}
+HYBRID_SAMPLER_TYPES = {
+    HybridSamplerType.NL: "Nonlinear (NL)",
+    HybridSamplerType.CQM: "Constrained Quadratic Model (CQM)"
+}
 
 
 def description_card():
@@ -56,9 +65,13 @@ def description_card():
     )
 
 
-def dropdown(label: str, id: str, options: list) -> html.Div:
+def dropdown(
+    label: str, id: str, options: list, wrapper_id: str = "", wrapper_class_name: str = ""
+) -> html.Div:
     """Slider element for value selection."""
     return html.Div(
+        id=wrapper_id,
+        className=wrapper_class_name,
         children=[
             html.Label(label),
             dcc.Dropdown(
@@ -67,6 +80,93 @@ def dropdown(label: str, id: str, options: list) -> html.Div:
                 value=options[0]["value"],
                 clearable=False,
                 searchable=False,
+            ),
+        ],
+    )
+
+
+def checklist(label: str, id: str, options: list) -> html.Div:
+    """Slider element for value selection."""
+    return html.Div([
+        html.Label(label),
+        dcc.Checklist(
+            id=id,
+            options=options,
+            value=[options[0]["value"]],
+        )
+    ])
+
+
+def generate_graph(visible: bool, type: str, index: int) -> html.Div:
+    """Generates graph either hidden or visible."""
+    return html.Div(
+        id={
+            "type": f"gantt-chart-{'visible' if visible else 'hidden'}-wrapper",
+            "index": index,
+        },
+        className="graph" if visible else "display-none",
+        children=[
+            dcc.Graph(
+                id={"type": f"gantt-chart-{type}", "index": index},
+                responsive=True,
+                config={"displayModeBar": False},
+            ),
+        ],
+    )
+
+
+def generate_solution_tab(label: str, title: str, tab: str, index: int) -> dcc.Tab:
+    """Generates solution tab containing, solution graphs, sort functionality, and
+    problem details dropdown.
+
+    Returns:
+        dcc.Tab: A Tab containing the solution graph and problem details.
+    """
+    return dcc.Tab(
+        label=label,
+        id=f"{tab}-tab",
+        className="tab",
+        value=f"{tab}-tab",
+        disabled=True,
+        children=[
+            html.Div(
+                className="solution-card",
+                children=[
+                    html.Div(
+                        className="gantt-chart-card",
+                        children=[
+                            html.Div(
+                                className="gantt-heading",
+                                children=[
+                                    html.H3(
+                                        [title, html.Span(id=f"{tab}-gantt-title-span")],
+                                        className="gantt-title",
+                                    ),
+                                    html.Button(
+                                        id={"type": "gantt-heading-button", "index": index},
+                                        className="gantt-heading-button",
+                                        children="Sort by start time",
+                                        n_clicks=0,
+                                    ),
+                                ],
+                            ),
+                            html.Div(
+                                className="graph-wrapper",
+                                children=[
+                                    generate_graph(True, "jobsort", index),
+                                    generate_graph(False, "startsort", index),
+                                ],
+                            ),
+                        ],
+                    ),
+                    html.Div(
+                        [
+                            html.Hr(),
+                            html.Div(problem_details(tab, index), className="problem-details"),
+                        ],
+                        className="problem-details-parent",
+                    ),
+                ],
             ),
         ],
     )
@@ -83,8 +183,13 @@ def generate_control_card() -> html.Div:
     """
 
     scenario_options = [{"label": scenario, "value": scenario} for scenario in SCENARIOS]
-    solver_options = [
-        {"label": solver_value, "value": i} for i, solver_value in enumerate(SOLVER_OPTIONS)
+    sampler_options = [
+        {"label": label, "value": sampler_type.value}
+        for sampler_type, label in SAMPLER_TYPES.items()
+    ]
+    hybrid_sampler_options = [
+        {"label": label, "value": hybrid_sampler_type.value}
+        for hybrid_sampler_type, label in HYBRID_SAMPLER_TYPES.items()
     ]
 
     return html.Div(
@@ -95,12 +200,17 @@ def generate_control_card() -> html.Div:
                 "scenario-select",
                 scenario_options,
             ),
-            html.Label("Solver (hybrid and/or classical)"),
-            dcc.Checklist(
-                id="solver-select",
-                options=solver_options,
-                value=[solver_options[2]["value"]],
-                className="" if SHOW_CQM else "hide-cqm",
+            checklist(
+                "Solver (hybrid and/or classical)",
+                "solver-select",
+                sorted(sampler_options, key=lambda op: op["value"]),
+            ),
+            dropdown(
+                "Quantum Hybrid Solver",
+                "hybrid-select",
+                sorted(hybrid_sampler_options, key=lambda op: op["value"]),
+                "hybrid-select-wrapper",
+                "" if SHOW_CQM else "display-none",
             ),
             html.Label("Solver Time Limit (seconds)"),
             dcc.Input(
@@ -124,11 +234,38 @@ def generate_control_card() -> html.Div:
     )
 
 
-def problem_details(solver: str) -> html.Div:
-    """generate the problem details section.
+def generate_problem_details_table(
+    scenario: str, solver: str, num_jobs: int, time_limit: int, num_operations: int, wall_clock_time: float
+) -> html.Tbody:
+    """Generate the problem details table.
+
+    Args:
+        scenario: The scenario that was optimized.
+        solver: The solver used for optimization.
+        num_jobs: The number of jobs in the scenario.
+        time_limit: The solver time limit.
+        num_operations: The number of operations in the scenario.
+        wall_clock_time: The overall time to optimize the scenario.
+
+    Returns:
+        html.Tbody: Tbody containing table rows for problem details.
+    """
+
+    table_rows = (
+        ("Scenario", scenario, "Solver", solver),
+        ("Number of Jobs", num_jobs, "Solver Time Limit", f"{time_limit}s"),
+        ("Number of Operations", num_operations, "Wall Clock Time", f"{round(wall_clock_time, 2)}s")
+    )
+
+    return html.Tbody([html.Tr([html.Td(cell) for cell in row]) for row in table_rows])
+
+
+def problem_details(solver: str, index: int) -> html.Div:
+    """Generate the problem details section.
 
     Args:
         solver: Which solver tab to generate the section for. Either "dwave" or "highs"
+        index: Unique element id to differentiate matching elements.
 
     Returns:
         html.Div: Div containing a collapsable table.
@@ -136,15 +273,21 @@ def problem_details(solver: str) -> html.Div:
     return html.Div(
         [
             html.Div(
-                id={"type": "to-collapse-class", "index": 1 if solver == "dwave" else 2},
+                id={"type": "to-collapse-class", "index": index},
                 className="details-collapse-wrapper collapsed",
                 children=[
-                    html.Button(
-                        id={"type": "collapse-trigger", "index": 1 if solver == "dwave" else 2},
-                        className="details-collapse",
+                    html.Div(
+                        className="details-collapse-title",
                         children=[
-                            html.H5("Problem Details"),
-                            html.Div(className="collapse-arrow"),
+                            html.H5(id=f"{solver}-stats-makespan", className="stats-makespan"),
+                            html.Button(
+                                id={"type": "collapse-trigger", "index": index},
+                                className="details-collapse",
+                                children=[
+                                    html.H5("Problem Details"),
+                                    html.Div(className="collapse-arrow"),
+                                ],
+                            ),
                         ],
                     ),
                     html.Div(
@@ -152,36 +295,7 @@ def problem_details(solver: str) -> html.Div:
                         children=[
                             html.Table(
                                 className="solution-stats-table",
-                                children=[
-                                    html.Tbody(
-                                        children=[
-                                            html.Tr(
-                                                [
-                                                    html.Td("Scenario"),
-                                                    html.Td(id=f"{solver}-stats-scenario"),
-                                                    html.Td("Solver"),
-                                                    html.Td(id=f"{solver}-stats-solver"),
-                                                ]
-                                            ),
-                                            html.Tr(
-                                                [
-                                                    html.Td("Number of Jobs"),
-                                                    html.Td(id=f"{solver}-stats-jobs"),
-                                                    html.Td("Solver Time Limit [s]"),
-                                                    html.Td(id=f"{solver}-stats-time-limit"),
-                                                ]
-                                            ),
-                                            html.Tr(
-                                                [
-                                                    html.Td("Number of Operations"),
-                                                    html.Td(id=f"{solver}-stats-resources"),
-                                                    html.Td("Wall Clock Time [s]"),
-                                                    html.Td(id=f"{solver}-stats-wall-clock-time"),
-                                                ]
-                                            ),
-                                        ],
-                                    ),
-                                ],
+                                id=f"{solver}-solution-stats-table",
                             ),
                         ],
                     ),
@@ -189,6 +303,7 @@ def problem_details(solver: str) -> html.Div:
             ),
         ],
     )
+
 
 # set the application HTML
 def set_html(app):
@@ -213,11 +328,6 @@ def set_html(app):
                                         [  # Padding and content wrapper
                                             description_card(),
                                             generate_control_card(),
-                                            html.Div(
-                                                ["initial child"],
-                                                id="output-clientside",
-                                                style={"display": "none"},
-                                            ),
                                         ]
                                     )
                                 ]
@@ -245,144 +355,46 @@ def set_html(app):
                                         className="tab",
                                         children=[
                                             html.Div(
-                                                html.Div(
-                                                    id="unscheduled-gantt-chart-card",
-                                                    className="gantt-chart-card",
-                                                    children=[
-                                                        html.H3(
-                                                            "Unscheduled Jobs and Operations",
-                                                            className="gantt-title",
-                                                        ),
-                                                        dcc.Loading(
-                                                            id="loading-icon-input",
-                                                            children=[
-                                                                dcc.Graph(
-                                                                    className="gantt-div",
-                                                                    id="unscheduled-gantt-chart",
-                                                                    responsive=True,
-                                                                    config={"displayModeBar": False},
-                                                                ),
-                                                            ],
-                                                        ),
-                                                    ],
-                                                ),
-                                                className="gantt-chart-card-parent",
-                                            )
-                                        ],
-                                    ),
-                                    dcc.Tab(
-                                        label=DWAVE_TAB_LABEL,
-                                        value="dwave-tab",
-                                        id="dwave-tab",
-                                        className="tab",
-                                        disabled=True,
-                                        children=[
-                                            html.Div(
-                                                html.Div(
-                                                    id="optimized-gantt-chart-card",
-                                                    className="gantt-chart-card",
-                                                    children=[
-                                                        html.Div(
-                                                            [
-                                                                html.H3(
-                                                                    "Leap Hybrid Solver",
-                                                                    className="gantt-title",
-                                                                ),
-                                                                html.Button(id={"type": "sort-button", "index": 0}, children="Sort by start time", n_clicks=0),
-                                                            ],
-                                                            className="gantt-heading-button",
-                                                        ),
-                                                        html.Div(
-                                                            [
-                                                                dcc.Graph(
-                                                                    id={"type": "gantt-chart-jobsort", "index": 0},
-                                                                    responsive=True,
-                                                                    className="gantt-div",
-                                                                    config={"displayModeBar": False},
-                                                                ),
-                                                                dcc.Graph(
-                                                                    id={"type": "gantt-chart-startsort", "index": 0},
-                                                                    responsive=True,
-                                                                    className="display-none",
-                                                                    config={"displayModeBar": False},
-                                                                ),
-                                                            ],
-                                                        ),
-                                                        html.Div(
-                                                            [
-                                                                html.Hr(),
-                                                                html.Div(
-                                                                    [
-                                                                        html.H5(id="dwave-stats-make-span"),
-                                                                        problem_details("dwave"),
-                                                                    ],
-                                                                    className="problem-details"
-                                                                ),
-                                                            ],
-                                                            className="problem-details-parent",
-                                                        ),
-                                                    ],
-                                                ),
-                                                className="gantt-chart-card-parent",
+                                                className="gantt-chart-card",
+                                                children=[
+                                                    html.Div(
+                                                        className="gantt-heading",
+                                                        children=[
+                                                            html.H3(
+                                                                "Unscheduled Jobs and Operations",
+                                                                className="gantt-title",
+                                                            ),
+                                                            html.Button(
+                                                                id={
+                                                                    "type": "gantt-heading-button",
+                                                                    "index": 0,
+                                                                },
+                                                                className="gantt-heading-button",
+                                                                children="Show Conflicts",
+                                                                n_clicks=0,
+                                                            ),
+                                                        ],
+                                                    ),
+                                                    dcc.Loading(
+                                                        id="loading-icon-input",
+                                                        parent_className="graph-wrapper",
+                                                        type="circle",
+                                                        delay_show=300,
+                                                        color=THEME_COLOR_SECONDARY,
+                                                        children=[
+                                                            generate_graph(True, "unscheduled", 0),
+                                                            generate_graph(False, "conflicts", 0),
+                                                        ],
+                                                    ),
+                                                ],
                                             ),
                                         ],
                                     ),
-                                    dcc.Tab(
-                                        label=CLASSICAL_TAB_LABEL,
-                                        id="highs-tab",
-                                        className="tab",
-                                        value="highs-tab",
-                                        disabled=True,
-                                        children=[
-                                            html.Div(
-                                                html.Div(
-                                                    id="highs-gantt-chart-card",
-                                                    className="gantt-chart-card",
-                                                    children=[
-                                                        html.Div(
-                                                            [
-                                                                html.H3(
-                                                                    "HiGHS Classical Solver",
-                                                                    className="gantt-title",
-                                                                ),
-                                                                html.Button(id={"type": "sort-button", "index": 1}, children="Sort by start time", n_clicks=0),
-                                                            ],
-                                                            className="gantt-heading-button",
-                                                        ),
-                                                        html.Div(
-                                                            [
-                                                                dcc.Graph(
-                                                                    id={"type": "gantt-chart-jobsort", "index": 1},
-                                                                    responsive=True,
-                                                                    className="gantt-div",
-                                                                    config={"displayModeBar": False},
-                                                                ),
-                                                                dcc.Graph(
-                                                                    id={"type": "gantt-chart-startsort", "index": 1},
-                                                                    responsive=True,
-                                                                    className="display-none",
-                                                                    config={"displayModeBar": False},
-                                                                ),
-                                                            ]
-                                                        ),
-                                                        html.Div(
-                                                            [
-                                                                html.Hr(),
-                                                                html.Div(
-                                                                    [
-                                                                        html.H5(id="highs-stats-make-span"),
-                                                                        problem_details("highs"),
-                                                                    ],
-                                                                    className="problem-details"
-                                                                ),
-                                                            ],
-                                                            className="problem-details-parent",
-                                                        ),
-                                                    ],
-                                                ),
-                                                className="gantt-chart-card-parent",
-                                            ),
-                                        ],
+                                    generate_solution_tab(
+                                        DWAVE_TAB_LABEL, "Quantum Hybrid Solver", "dwave", 1
+                                    ),
+                                    generate_solution_tab(
+                                        CLASSICAL_TAB_LABEL, "Classical Solver (HiGHS)", "highs", 2
                                     ),
                                 ],
                             )

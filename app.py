@@ -32,16 +32,16 @@ Apache License, Version 2.0
 
 import pathlib
 import time
-from enum import Enum
+from typing import NamedTuple
 
 import dash
 import diskcache
 import plotly.graph_objs as go
-from dash import DiskcacheManager, ctx, MATCH
+from dash import MATCH, DiskcacheManager, ctx
 from dash.dependencies import ClientsideFunction, Input, Output, State
 from dash.exceptions import PreventUpdate
 
-from dash_html import set_html
+from dash_html import generate_problem_details_table, set_html
 
 cache = diskcache.Cache("./cache")
 background_callback_manager = DiskcacheManager(cache)
@@ -54,8 +54,9 @@ background_callback_manager = DiskcacheManager(cache)
 # the `multiprocessing` library, but its fork, `multiprocess` still hasn't caught up.
 # (see docs: https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods)
 import multiprocess
+
 if multiprocess.get_start_method(allow_none=True) is None:
-    multiprocess.set_start_method('spawn')
+    multiprocess.set_start_method("spawn")
 
 from app_configs import (
     APP_TITLE,
@@ -63,11 +64,12 @@ from app_configs import (
     DEBUG,
     DWAVE_TAB_LABEL,
     SCENARIOS,
+    SHOW_CQM,
     THEME_COLOR,
     THEME_COLOR_SECONDARY,
 )
 from src.generate_charts import generate_gantt_chart, get_empty_figure, get_minimum_task_times
-from src.job_shop_scheduler import run_shop_scheduler
+from src.job_shop_scheduler import HybridSamplerType, SamplerType, run_shop_scheduler
 from src.model_data import JobShopData
 
 app = dash.Dash(
@@ -93,12 +95,6 @@ css = f"""/* Generated theme settings css file, see app.py */
 """
 with open("assets/theme.css", "w") as f:
     f.write(css)
-
-
-class SamplerType(Enum):
-    CQM = 0
-    NL = 1
-    HIGHS = 2
 
 
 @app.callback(
@@ -127,53 +123,40 @@ def toggle_left_column(collapse_trigger: int, to_collapse_class: str) -> str:
 
 
 @app.callback(
-    Output("solver-select", "options"),
+    Output("hybrid-select-wrapper", "className"),
     inputs=[
         Input("solver-select", "value"),
-        State("solver-select", "options"),
     ],
     prevent_initial_call=True,
 )
 def update_solvers_selected(
     selected_solvers: list[int],
-    solver_options: list[dict]
-) -> list[dict]:
-    """Disable NL/CQM solver checkboxes when the other one is selected.
-
-    Note, can be removed if CQM solver is not in use.
+) -> str:
+    """Hide NL/CQM selector when Hybrid is unselected. Not applicable when SHOW_CQM is False.
 
     Args:
         selected_solvers (list[int]): Currently selected solvers.
-        solver_options (list[dict]): List of solver checkbox options.
 
     Returns:
-        list: Updated list of solver checkbox options.
+        str: Class name for hybrid select wrapper.
     """
+    if SHOW_CQM:
+        return "" if SamplerType.HYBRID.value in selected_solvers else "display-none"
 
-    if SamplerType.CQM.value in selected_solvers:
-        solver_options[1]["disabled"] = True
-        return solver_options
-
-    elif SamplerType.NL.value in selected_solvers:
-        solver_options[0]["disabled"] = True
-        return solver_options
-
-    solver_options[0]["disabled"] = False
-    solver_options[1]["disabled"] = False
-    return solver_options
+    raise PreventUpdate
 
 
 @app.callback(
     Output("dwave-tab", "label", allow_duplicate=True),
-    Output("highs-tab", "label", allow_duplicate=True),
     Output("dwave-tab", "disabled", allow_duplicate=True),
-    Output("highs-tab", "disabled", allow_duplicate=True),
     Output("dwave-tab", "className", allow_duplicate=True),
+    Output("running-dwave", "data", allow_duplicate=True),
+    Output("highs-tab", "label", allow_duplicate=True),
+    Output("highs-tab", "disabled", allow_duplicate=True),
     Output("highs-tab", "className", allow_duplicate=True),
+    Output("running-classical", "data", allow_duplicate=True),
     Output("run-button", "className", allow_duplicate=True),
     Output("cancel-button", "className", allow_duplicate=True),
-    Output("running-dwave", "data", allow_duplicate=True),
-    Output("running-classical", "data", allow_duplicate=True),
     Output("tabs", "value"),
     [
         Input("run-button", "n_clicks"),
@@ -183,7 +166,7 @@ def update_solvers_selected(
 )
 def update_tab_loading_state(
     run_click: int, cancel_click: int, solvers: list[str]
-) -> tuple[str, str, bool, bool, str, str, str, str, bool, bool, str]:
+) -> tuple[str, bool, str, bool, str, bool, str, bool, str, str, str]:
     """Updates the tab loading state after the run button
     or cancel button has been clicked.
 
@@ -194,47 +177,37 @@ def update_tab_loading_state(
 
     Returns:
         str: The label for the D-Wave tab.
-        str: The label for the Classical tab.
         bool: True if D-Wave tab should be disabled, False otherwise.
-        bool: True if Classical tab should be disabled, False otherwise.
         str: Class name for the D-Wave tab.
+        bool: Whether Hybrid is running.
+        str: The label for the Classical tab.
+        bool: True if Classical tab should be disabled, False otherwise.
         str: Class name for the Classical tab.
+        bool: Whether HiGHS is running.
         str: Run button class.
         str: Cancel button class.
-        bool: Whether Hybrid is running.
-        bool: Whether HiGHS is running.
         str: The value of the tab that should be active.
     """
 
     if ctx.triggered_id == "run-button" and run_click > 0:
-        run_hybrid = SamplerType.CQM.value in solvers or SamplerType.NL.value in solvers
-        run_highs = SamplerType.HIGHS.value in solvers
-
+        running = ("Loading...", True, "tab", True)
         return (
-            "Loading..." if run_hybrid else dash.no_update,
-            "Loading..." if run_highs else dash.no_update,
-            True if run_hybrid else dash.no_update,
-            True if run_highs else dash.no_update,
-            "tab",
-            "tab",
+            *(running if SamplerType.HYBRID.value in solvers else [dash.no_update] * 4),
+            *(running if SamplerType.HIGHS.value in solvers else [dash.no_update] * 4),
             "display-none",
             "",
-            run_hybrid,
-            run_highs,
             "input-tab",
         )
+
     if ctx.triggered_id == "cancel-button" and cancel_click > 0:
+        not_running = (dash.no_update, dash.no_update, False)
         return (
             DWAVE_TAB_LABEL,
+            *not_running,
             CLASSICAL_TAB_LABEL,
-            dash.no_update,
-            dash.no_update,
-            dash.no_update,
-            dash.no_update,
+            *not_running,
             "",
             "display-none",
-            False,
-            False,
             dash.no_update,
         )
     raise PreventUpdate
@@ -268,50 +241,71 @@ def update_button_visibility(running_dwave: bool, running_classical: bool) -> tu
 
 
 @app.callback(
-    Output({"type": "gantt-chart-jobsort", "index": MATCH}, "className"),
-    Output({"type": "gantt-chart-startsort", "index": MATCH}, "className"),
-    Output({"type": "sort-button", "index": MATCH}, "children"),
+    Output({"type": "gantt-chart-visible-wrapper", "index": MATCH}, "children"),
+    Output({"type": "gantt-chart-hidden-wrapper", "index": MATCH}, "children"),
+    Output({"type": "gantt-heading-button", "index": MATCH}, "children"),
     inputs=[
-        Input({"type": "sort-button", "index": MATCH}, "n_clicks"),
-        State({"type": "sort-button", "index": MATCH}, "children"),
+        Input({"type": "gantt-heading-button", "index": MATCH}, "n_clicks"),
+        State({"type": "gantt-heading-button", "index": MATCH}, "children"),
+        State({"type": "gantt-chart-visible-wrapper", "index": MATCH}, "children"),
+        State({"type": "gantt-chart-hidden-wrapper", "index": MATCH}, "children"),
     ],
     prevent_initial_call=True,
 )
-def switch_gantt_chart(new_click: int, sort_button_text: str) -> tuple[str, str, str]:
+def switch_gantt_chart(
+    new_click: int, sort_button_text: str, visibleChart: list, hiddenChart: list
+) -> tuple[str, str, str]:
     """Switch between the results plot sorted by job or by start time.
 
     Args:
         new_click (int): The number of times the sort button has been clicked.
-        sort_button_text: The text in the sort button (indicating how to sort the plot).
+        sort_button_text (str): The text of the sort button (indicating how to sort the plot).
+        visibleChart (list): The children of the currently visible graph.
+        hiddenChart (list): The children of the currently hidden graph.
 
     Return:
-        str: The results class name sorted by job (whether hidden or displayed).
-        str: The results class name sorted by start time (whether hidden or displayed).
+        list: The new graph that should be visible.
+        list: The new graph that should be hidden.
         str: The new text of the sort button.
     """
-    if sort_button_text == "Sort by start time":
-        return "display-none", "gantt-div", "Sort by job"
-    return "gantt-div", "display-none", "Sort by start time"
+    if ctx.triggered_id["index"] == 0:
+        button_text = "Show Conflicts" if sort_button_text == "Hide Conflicts" else "Hide Conflicts"
+    else:
+        button_text = (
+            "Sort by job" if sort_button_text == "Sort by start time" else "Sort by start time"
+        )
+    return hiddenChart, visibleChart, button_text
+
+
+class RunOptimizationHybridReturn(NamedTuple):
+    """Return type for the ``run_optimization_hybrid`` callback function."""
+
+    gantt_chart_jobsort: go.Figure = dash.no_update
+    gantt_chart_startsort: go.Figure = dash.no_update
+    dwave_makespan: str = dash.no_update
+    dwave_solution_stats_table: list = dash.no_update
+    dwave_tab_disabled: bool = dash.no_update
+    dwave_gantt_title_span: str = dash.no_update
+    dwave_tab_class: str = dash.no_update
+    dwave_tab_label: str = dash.no_update
+    running_dwave: bool = dash.no_update
 
 
 @app.callback(
-    Output({"type": "gantt-chart-jobsort", "index": 0}, "figure"),
-    Output({"type": "gantt-chart-startsort", "index": 0}, "figure"),
-    Output("dwave-stats-make-span", "children"),
-    Output("dwave-stats-time-limit", "children"),
-    Output("dwave-stats-wall-clock-time", "children"),
-    Output("dwave-stats-scenario", "children"),
-    Output("dwave-stats-solver", "children"),
-    Output("dwave-stats-jobs", "children"),
-    Output("dwave-stats-resources", "children"),
+    Output({"type": "gantt-chart-jobsort", "index": 1}, "figure"),
+    Output({"type": "gantt-chart-startsort", "index": 1}, "figure"),
+    Output("dwave-stats-makespan", "children"),
+    Output("dwave-solution-stats-table", "children"),
+    Output("dwave-tab", "disabled"),
+    Output("dwave-gantt-title-span", "children"),
     Output("dwave-tab", "className"),
     Output("dwave-tab", "label"),
-    Output("dwave-tab", "disabled"),
     Output("running-dwave", "data"),
     background=True,
     inputs=[
         Input("run-button", "n_clicks"),
         State("solver-select", "value"),
+        State("hybrid-select", "value"),
         State("scenario-select", "value"),
         State("solver-time-limit", "value"),
     ],
@@ -319,36 +313,39 @@ def switch_gantt_chart(new_click: int, sort_button_text: str) -> tuple[str, str,
     prevent_initial_call=True,
 )
 def run_optimization_hybrid(
-    run_click: int, solvers: list[int], scenario: str, time_limit: int
-) -> tuple[go.Figure, go.Figure, str, str, str, str, str, str, str, str, str, bool, bool]:
+    run_click: int, solvers: list[int], hybrid_solver: int, scenario: str, time_limit: int
+) -> RunOptimizationHybridReturn:
     """Runs optimization using the D-Wave hybrid solver.
 
     Args:
         run_click (int): The number of times the run button has been clicked.
         solvers (list[int]): The solvers that have been selected.
+        hybrid_solver (int): The hybrid solver that have been selected.
         scenario (str): The scenario to use for the optimization.
         time_limit (int): The time limit for the optimization.
 
     Returns:
-        go.Figure: Gantt chart for the D-Wave hybrid solver sorted by job.
-        go.Figure: Gantt chart for the D-Wave hybrid solver sorted by start time.
-        str: Final make-span for the D-Wave tab.
-        str: Set time limit for the D-Wave tab.
-        str: Wall clock time for the D-Wave tab.
-        str: Scenario for the D-Wave tab.
-        str: Solver for the D-Wave tab.
-        str: Number of jobs for the D-Wave tab.
-        str: Number of resources the D-Wave tab.
-        str: Class name for the D-Wave tab.
-        str: The label for the D-Wave tab.
-        bool: True if D-Wave tab should be disabled, False otherwise.
-        bool: Whether D-Wave solver is running.
+        A NamedTuple (RunOptimizationHybridReturn) containing all outputs to be used when updating the HTML
+        template (in ``dash_html.py``). These are:
+            go.Figure: Gantt chart for the D-Wave hybrid solver sorted by job.
+            go.Figure: Gantt chart for the D-Wave hybrid solver sorted by start time.
+            str: Final makespan for the D-Wave tab.
+            list: Solution stats table for problem details.
+            bool: True if D-Wave tab should be disabled, False otherwise.
+            str: Graph title span to add the solver type to.
+            str: Class name for the D-Wave tab.
+            str: The label for the D-Wave tab.
+            bool: Whether D-Wave solver is running.
     """
     if ctx.triggered_id != "run-button" or run_click == 0:
         raise PreventUpdate
 
-    if SamplerType.CQM.value not in solvers and SamplerType.NL.value not in solvers:
-        return (*([dash.no_update] * 9), "tab", DWAVE_TAB_LABEL, dash.no_update, False)
+    if SamplerType.HYBRID.value not in solvers:
+        return RunOptimizationHybridReturn(
+            dwave_tab_class="tab",
+            dwave_tab_label=DWAVE_TAB_LABEL,
+            running_dwave=False
+        )
 
     start = time.perf_counter()
     model_data = JobShopData()
@@ -356,42 +353,63 @@ def run_optimization_hybrid(
 
     model_data.load_from_file(DATA_PATH.joinpath(filename))
 
+    running_nl = not SHOW_CQM or hybrid_solver is HybridSamplerType.NL.value
+
     results = run_shop_scheduler(
         model_data,
         use_scipy_solver=False,
-        use_nl_solver=SamplerType.NL.value in solvers,
+        use_nl_solver=running_nl,
         solver_time_limit=time_limit,
     )
 
     fig_jobsort = generate_gantt_chart(results, sort_by="JobInt")
     fig_startsort = generate_gantt_chart(results, sort_by="Start")
 
-    table = (
-        f"Make-span: {int(results['Finish'].max())}",
-        time_limit,
-        round(time.perf_counter() - start, 2),
+    solution_stats_table = generate_problem_details_table(
         scenario,
-        "NL Solver" if SamplerType.NL.value in solvers else "CQM Solver",
+        "NL Solver" if running_nl else "CQM Solver",
         model_data.get_job_count(),
+        time_limit,
         model_data.get_resource_count(),
-        )
+        time.perf_counter() - start,
+    )
 
-    return (fig_jobsort, fig_startsort, *table, "tab-success", DWAVE_TAB_LABEL, False, False)
+    return RunOptimizationHybridReturn(
+        gantt_chart_jobsort=fig_jobsort,
+        gantt_chart_startsort=fig_startsort,
+        dwave_makespan=f"Makespan: {int(results['Finish'].max())}",
+        dwave_solution_stats_table=solution_stats_table,
+        dwave_tab_disabled=False,
+        dwave_gantt_title_span=" (NL)" if running_nl else " (CQM)",
+        dwave_tab_class="tab-success",
+        dwave_tab_label=DWAVE_TAB_LABEL,
+        running_dwave=False,
+    )
+
+
+class RunOptimizationScipyReturn(NamedTuple):
+    """Return type for the ``run_optimization_scipy`` callback function."""
+
+    gantt_chart_jobsort: go.Figure = dash.no_update
+    gantt_chart_startsort: go.Figure = dash.no_update
+    highs_makespan: str = dash.no_update
+    highs_solution_stats_table: list = dash.no_update
+    highs_tab_disabled: bool = dash.no_update
+    sort_button_style: dict = dash.no_update
+    highs_tab_class: str = dash.no_update
+    highs_tab_label: str = dash.no_update
+    running_classical: bool = dash.no_update
 
 
 @app.callback(
-    Output({"type": "gantt-chart-jobsort", "index": 1}, "figure"),
-    Output({"type": "gantt-chart-startsort", "index": 1}, "figure"),
-    Output("highs-stats-make-span", "children"),
-    Output("highs-stats-time-limit", "children"),
-    Output("highs-stats-wall-clock-time", "children"),
-    Output("highs-stats-scenario", "children"),
-    Output("highs-stats-solver", "children"),
-    Output("highs-stats-jobs", "children"),
-    Output("highs-stats-resources", "children"),
+    Output({"type": "gantt-chart-jobsort", "index": 2}, "figure"),
+    Output({"type": "gantt-chart-startsort", "index": 2}, "figure"),
+    Output("highs-stats-makespan", "children"),
+    Output("highs-solution-stats-table", "children"),
+    Output("highs-tab", "disabled"),
+    Output({"type": "gantt-heading-button", "index": 2}, "style"),
     Output("highs-tab", "className"),
     Output("highs-tab", "label"),
-    Output("highs-tab", "disabled"),
     Output("running-classical", "data"),
     background=True,
     inputs=[
@@ -405,7 +423,7 @@ def run_optimization_hybrid(
 )
 def run_optimization_scipy(
     run_click: int, solvers: list[int], scenario: str, time_limit: int
-) -> tuple[go.Figure, go.Figure, str, str, str, str, str, str, str, str, str, bool, bool]:
+) -> RunOptimizationScipyReturn:
     """Runs optimization using the HiGHS solver.
 
     Args:
@@ -416,25 +434,27 @@ def run_optimization_scipy(
         time_limit (int): The time limit for the optimization.
 
     Returns:
-        go.Figure: Gantt chart for the Classical solver sorted by job.
-        go.Figure: Gantt chart for the Classical solver sorted by start time.
-        str: Final make-span for the Classical tab.
-        str: Set time limit for the Classical tab.
-        str: Wall clock time for the Classical tab.
-        str: Scenario for the Classical tab.
-        str: Solver for the Classical tab.
-        str: Number of jobs for the Classical tab.
-        str: Number of resources the Classical tab.
-        str: Class name for the Classical tab.
-        str: The label for the Classical tab.
-        bool: True if Classical tab should be disabled, False otherwise.
-        bool: Whether Classical solver is running.
+        A NamedTuple (RunOptimizationScipyReturn) containing all outputs to be used when updating the HTML
+        template (in ``dash_html.py``). These are:
+            go.Figure: Gantt chart for the Classical solver sorted by job.
+            go.Figure: Gantt chart for the Classical solver sorted by start time.
+            str: Final makespan for the Classical tab.
+            list: Solution stats table for problem details.
+            bool: True if Classical tab should be disabled, False otherwise.
+            dict: Sort button style, either display none or nothing.
+            str: Class name for the Classical tab.
+            str: The label for the Classical tab.
+            bool: Whether Classical solver is running.
     """
     if ctx.triggered_id != "run-button" or run_click == 0:
         raise PreventUpdate
 
     if SamplerType.HIGHS.value not in solvers:
-        return (*([dash.no_update] * 9), "tab", CLASSICAL_TAB_LABEL, dash.no_update, False)
+        return RunOptimizationScipyReturn(
+            highs_tab_class="tab",
+            highs_tab_label=CLASSICAL_TAB_LABEL,
+            running_classical=False
+        )
 
     start = time.perf_counter()
     model_data = JobShopData()
@@ -448,36 +468,49 @@ def run_optimization_scipy(
         solver_time_limit=time_limit,
     )
 
+    solution_stats_table = generate_problem_details_table(
+        scenario,
+        "HiGHS",
+        model_data.get_job_count(),
+        time_limit,
+        model_data.get_resource_count(),
+        time.perf_counter() - start
+    )
+    makespan = f"Makespan: {0 if results.empty else int(results['Finish'].max())}"
+
     if results.empty:
         fig = get_empty_figure("No solution found for Classical solver")
-        table = (
-            "Make-span: 0",
-            time_limit,
-            round(time.perf_counter() - start, 2),
-            scenario,
-            "HiGHS",
-            model_data.get_job_count(),
-            model_data.get_resource_count(),
-            )
-        return (fig, fig, *table, "tab-fail", CLASSICAL_TAB_LABEL, False, False)
+        return RunOptimizationScipyReturn(
+            gantt_chart_jobsort=fig,
+            gantt_chart_startsort=fig,
+            highs_makespan=makespan,
+            highs_solution_stats_table=solution_stats_table,
+            highs_tab_disabled=False,
+            sort_button_style={"display": "none"},
+            highs_tab_class="tab-fail",
+            highs_tab_label=CLASSICAL_TAB_LABEL,
+            running_classical=False,
+        )
 
     fig_jobsort = generate_gantt_chart(results, sort_by="JobInt")
     fig_startsort = generate_gantt_chart(results, sort_by="Start")
 
-    table = (
-        f"Make-span: {int(results['Finish'].max())}",
-        time_limit,
-        round(time.perf_counter() - start, 2),
-        scenario,
-        "HiGHS",
-        model_data.get_job_count(),
-        model_data.get_resource_count(),
-        )
-    return (fig_jobsort, fig_startsort, *table, "tab-success", CLASSICAL_TAB_LABEL, False, False)
+    return RunOptimizationScipyReturn(
+        gantt_chart_jobsort=fig_jobsort,
+        gantt_chart_startsort=fig_startsort,
+        highs_makespan=makespan,
+        highs_solution_stats_table=solution_stats_table,
+        highs_tab_disabled=False,
+        sort_button_style={},
+        highs_tab_class="tab-success",
+        highs_tab_label=CLASSICAL_TAB_LABEL,
+        running_classical=False,
+    )
 
 
 @app.callback(
-    Output("unscheduled-gantt-chart", "figure"),
+    Output({"type": "gantt-chart-unscheduled", "index": 0}, "figure"),
+    Output({"type": "gantt-chart-conflicts", "index": 0}, "figure"),
     [
         Input("scenario-select", "value"),
     ],
@@ -496,7 +529,8 @@ def generate_unscheduled_gantt_chart(scenario: str) -> go.Figure:
     model_data.load_from_file(DATA_PATH.joinpath(SCENARIOS[scenario]))
     df = get_minimum_task_times(model_data)
     fig = generate_gantt_chart(df)
-    return fig
+    fig_conflicts = generate_gantt_chart(df, show_conflicts=True)
+    return fig, fig_conflicts
 
 
 # import the html code and sets it in the app
