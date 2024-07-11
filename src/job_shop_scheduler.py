@@ -16,11 +16,11 @@ from dimod import Binary, ConstrainedQuadraticModel, Integer
 from dwave.system import LeapHybridCQMSampler, LeapHybridNLSampler
 
 sys.path.append("./src")
-from dwave.optimization.generators import flow_shop_scheduling
+from dwave.optimization.generators import flow_shop_scheduling, job_shop_scheduling
 
 import utils.plot_schedule as job_plotter
 import utils.scipy_solver as scipy_solver
-from model_data import JobShopData
+from model_data import ShopSchedulingData
 from utils.greedy import GreedyJobShop
 from utils.utils import print_cqm_stats, write_solution_to_file
 
@@ -40,12 +40,12 @@ class SchedulingMethodOptions(Enum):
     FSS = 1
 
 
-def generate_greedy_makespan(job_data: JobShopData, num_samples: int = 100) -> int:
+def generate_greedy_makespan(job_data: ShopSchedulingData, num_samples: int = 100) -> int:
     """This function generates random samples using the greedy algorithm; it will keep the
     top keep_pct percent of samples.
 
     Args:
-        job_data (JobShopData): An instance of the JobShopData class
+        job_data (ShopSchedulingData): An instance of the ShopSchedulingData class
         num_samples (int, optional): The number of samples to take (number of times
             the GreedyJobShop algorithm is run). Defaults to 100.
 
@@ -66,7 +66,7 @@ class JobShopSchedulingModel:
     """Builds and solves a Job Shop Scheduling problem using CQM or the NL Solver.
 
     Args:
-        model_data (JobShopData): The data for the job shop scheduling
+        model_data (ShopSchedulingData): The data for the job shop scheduling
         max_makespan (int, optional): The maximum makespan allowed for the schedule.
             If None, the makespan will be set to a value that is greedy_mulitiplier
             times the makespan found by the greedy algorithm. Defaults to None.
@@ -74,7 +74,7 @@ class JobShopSchedulingModel:
             to get the upperbound on the makespan. Defaults to 1.4.
 
     Attributes:
-        model_data (JobShopData): The data for the job shop scheduling
+        model_data (ShopSchedulingData): The data for the job shop scheduling
         cqm (ConstrainedQuadraticModel): The CQM model
         nl_model (nlsolver.Model): The NL Solver model
         solution (dict): The solution to the problem
@@ -84,7 +84,7 @@ class JobShopSchedulingModel:
     """
 
     def __init__(
-        self, model_data: JobShopData, max_makespan: int = None, greedy_multiplier: float = 1.4
+        self, model_data: ShopSchedulingData, max_makespan: int = None, greedy_multiplier: float = 1.4
     ):
         self.model_data = model_data
         self.cqm = None
@@ -105,9 +105,12 @@ class JobShopSchedulingModel:
         """Define CQM model."""
         self.cqm = ConstrainedQuadraticModel()
 
-    def create_nl_model(self) -> None:
+    def create_nl_model(self, is_jss) -> None:
         """Create NL model."""
-        self.nl_model = flow_shop_scheduling(processing_times=self.model_data.processing_times)
+        if is_jss:
+            self.nl_model = job_shop_scheduling(times=self.model_data.processing_times, machines=self.model_data.machines)
+        else:
+            self.nl_model = flow_shop_scheduling(processing_times=self.model_data.processing_times)
 
     def define_cqm_variables(self) -> None:
         """Define CQM variables."""
@@ -303,7 +306,7 @@ class JobShopSchedulingModel:
 
         return end_times
 
-    def call_nl_solver(self, time_limit: int) -> None:
+    def call_nl_solver(self, time_limit: int, is_jss: bool) -> None:
         """Calls NL solver.
 
         Args:
@@ -313,17 +316,26 @@ class JobShopSchedulingModel:
             self.solution: the solution to the problem
         """
         sampler = LeapHybridNLSampler()
-        sampler.sample(self.nl_model, time_limit=time_limit, label="FSS demo")
+        sampler.sample(self.nl_model, time_limit=time_limit, label=f"{'JSS' if is_jss else 'FSS'} Demo")
+        if is_jss:
+            solution = next(self.nl_model.iter_decisions()).state(0).astype(int)
 
-        end_times = self._calculate_end_times()
+            for job_id, job_machine_order in enumerate(self.model_data.machines):
+                for machine in job_machine_order:
+                    start_time = solution[job_id][machine]
+                    resource = self.model_data.resource_names[machine]
+                    task = self.model_data.get_resource_job_tasks(job=str(job_id), resource=resource)
+                    self.solution[(str(job_id), resource)] = task, start_time, task.duration
 
-        for machine_idx, machine_times in enumerate(end_times):
-            for job_idx, end_time in enumerate(machine_times):
-                job = int(next(self.nl_model.iter_decisions()).state()[job_idx])
+        else:
+            end_times = self._calculate_end_times()
 
-                resource = self.model_data.resource_names[machine_idx]
-                task = self.model_data.get_resource_job_tasks(job=str(job), resource=resource)
-                self.solution[(str(job), resource)] = task, end_time - task.duration, task.duration
+            for machine_idx, machine_times in enumerate(end_times):
+                for job_idx, end_time in enumerate(machine_times):
+                    job = int(next(self.nl_model.iter_decisions()).state()[job_idx])
+                    resource = self.model_data.resource_names[machine_idx]
+                    task = self.model_data.get_resource_job_tasks(job=str(job), resource=resource)
+                    self.solution[(str(job), resource)] = task, end_time - task.duration, task.duration
 
     def call_scipy_solver(self, time_limit: int = 100):
         """This function calls the HiGHS via SciPy solver and returns the solution
@@ -364,7 +376,7 @@ class JobShopSchedulingModel:
 
 
 def run_shop_scheduler(
-    job_data: JobShopData,
+    job_data: ShopSchedulingData,
     solver_time_limit: int = 60,
     use_scipy_solver: bool = False,
     use_nl_solver: bool = False,
@@ -374,11 +386,12 @@ def run_shop_scheduler(
     profile: str = None,
     max_makespan: int = None,
     greedy_multiplier: float = 1.4,
+    is_jss: bool = True,
 ) -> pd.DataFrame:
     """This function runs the job shop scheduler on the given data.
 
     Args:
-        job_data (JobShopData): A JobShopData object that holds the data for this job shop
+        job_data (ShopSchedulingData): A ShopSchedulingData object that holds the data for this job shop
             scheduling problem.
         solver_time_limit (int, optional): Upperbound on how long the schedule can be; leave empty to
             auto-calculate an appropriate value. Defaults to None.
@@ -408,8 +421,8 @@ def run_shop_scheduler(
         print_cqm_stats(model.cqm)
 
     if use_nl_solver:
-        model.create_nl_model()
-        model.call_nl_solver(time_limit=solver_time_limit)
+        model.create_nl_model(is_jss=is_jss)
+        model.call_nl_solver(time_limit=solver_time_limit, is_jss=is_jss)
     else:
         model.define_cqm_model()
         model.define_cqm_variables()
@@ -451,7 +464,7 @@ if __name__ == "__main__":
         "--instance",
         type=str,
         help="path to the input instance file; ",
-        default="input/tai20_5.txt",
+        default="input/fss/tai20_5.txt",
     )
 
     parser.add_argument("-tl", "--time_limit", type=int, help="time limit in seconds", default=10)
@@ -518,7 +531,7 @@ if __name__ == "__main__":
     use_nl_solver = args.use_nl_solver
     verbose = args.verbose
 
-    job_data = JobShopData()
+    job_data = ShopSchedulingData(is_jss=False)
     job_data.load_from_file(input_file)
 
     results = run_shop_scheduler(

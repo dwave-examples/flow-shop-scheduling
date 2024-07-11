@@ -41,7 +41,7 @@ from dash import MATCH, DiskcacheManager, ctx
 from dash.dependencies import ClientsideFunction, Input, Output, State
 from dash.exceptions import PreventUpdate
 
-from dash_html import generate_problem_details_table, set_html
+from dash_html import SCENARIO_OPTIONS_FSS, SCENARIO_OPTIONS_JSS, generate_problem_details_table, set_html
 
 cache = diskcache.Cache("./cache")
 background_callback_manager = DiskcacheManager(cache)
@@ -67,14 +67,15 @@ from app_configs import (
     DWAVE_TAB_LABEL,
     MAIN_HEADER,
     MAIN_HEADER_FSS,
-    SCENARIOS,
+    SCENARIOS_FSS,
+    SCENARIOS_JSS,
     SHOW_CQM,
     THEME_COLOR,
     THEME_COLOR_SECONDARY,
 )
 from src.generate_charts import generate_gantt_chart, get_empty_figure, get_minimum_task_times
 from src.job_shop_scheduler import HybridSamplerType, SamplerType, SchedulingMethodOptions, run_shop_scheduler
-from src.model_data import JobShopData
+from src.model_data import ShopSchedulingData
 
 app = dash.Dash(
     __name__,
@@ -88,7 +89,8 @@ server = app.server
 app.config.suppress_callback_exceptions = True
 
 BASE_PATH = pathlib.Path(__file__).parent.resolve()
-DATA_PATH = BASE_PATH.joinpath("input").resolve()
+DATA_PATH_JSS = BASE_PATH.joinpath("input/jss").resolve()
+DATA_PATH_FSS = BASE_PATH.joinpath("input/fss").resolve()
 
 # Generates css file and variable using THEME_COLOR and THEME_COLOR_SECONDARY settings
 css = f"""/* Generated theme settings css file, see app.py */
@@ -129,6 +131,12 @@ def toggle_left_column(collapse_trigger: int, to_collapse_class: str) -> str:
 @app.callback(
     Output("header", "children"),
     Output("description", "children"),
+    Output("scenario-select", "options"),
+    Output("dwave-tab", "disabled", allow_duplicate=True),
+    Output("highs-tab", "disabled", allow_duplicate=True),
+    Output("tabs", "value", allow_duplicate=True),
+    Output("dwave-tab", "className", allow_duplicate=True),
+    Output("highs-tab", "className", allow_duplicate=True),
     [
         Input("scheduling-method", "value"),
     ],
@@ -141,15 +149,22 @@ def update_scheduling_method(scheduling_method: int) -> tuple[str, str]:
         scheduling_method (int): Scheduling method, either JSS or FSS.
     """
 
-    if scheduling_method is SchedulingMethodOptions.JSS.value:
+    is_jss = scheduling_method is SchedulingMethodOptions.JSS.value
+    reset_tabs = (True, True, "input-tab", "tab", "tab")
+
+    if is_jss:
         return (
             MAIN_HEADER,
             DESCRIPTION,
+            SCENARIO_OPTIONS_JSS,
+            *reset_tabs,
         )
 
     return (
         MAIN_HEADER_FSS,
         DESCRIPTION_FSS,
+        SCENARIO_OPTIONS_FSS,
+        *reset_tabs,
     )
 
 
@@ -189,6 +204,7 @@ def update_solvers_selected(
     Output("run-button", "className", allow_duplicate=True),
     Output("cancel-button", "className", allow_duplicate=True),
     Output("tabs", "value"),
+    Output("scheduling-method", "disabled", allow_duplicate=True),
     [
         Input("run-button", "n_clicks"),
         Input("cancel-button", "n_clicks"),
@@ -197,7 +213,7 @@ def update_solvers_selected(
 )
 def update_tab_loading_state(
     run_click: int, cancel_click: int, solvers: list[str]
-) -> tuple[str, bool, str, bool, str, bool, str, bool, str, str, str]:
+) -> tuple[str, bool, str, bool, str, bool, str, bool, str, str, str, bool]:
     """Updates the tab loading state after the run button
     or cancel button has been clicked.
 
@@ -218,6 +234,7 @@ def update_tab_loading_state(
         str: Run button class.
         str: Cancel button class.
         str: The value of the tab that should be active.
+        bool: Whether the scheduling method selector should be disabled.
     """
 
     if ctx.triggered_id == "run-button" and run_click > 0:
@@ -228,6 +245,7 @@ def update_tab_loading_state(
             "display-none",
             "",
             "input-tab",
+            True,
         )
 
     if ctx.triggered_id == "cancel-button" and cancel_click > 0:
@@ -240,6 +258,7 @@ def update_tab_loading_state(
             "",
             "display-none",
             dash.no_update,
+            False,
         )
     raise PreventUpdate
 
@@ -320,6 +339,7 @@ class RunOptimizationHybridReturn(NamedTuple):
     dwave_tab_class: str = dash.no_update
     dwave_tab_label: str = dash.no_update
     running_dwave: bool = dash.no_update
+    scheduling_method_disabled: bool = dash.no_update
 
 
 @app.callback(
@@ -332,6 +352,7 @@ class RunOptimizationHybridReturn(NamedTuple):
     Output("dwave-tab", "className"),
     Output("dwave-tab", "label"),
     Output("running-dwave", "data"),
+    Output("scheduling-method", "disabled", allow_duplicate=True),
     background=True,
     inputs=[
         Input("run-button", "n_clicks"),
@@ -339,12 +360,18 @@ class RunOptimizationHybridReturn(NamedTuple):
         State("hybrid-select", "value"),
         State("scenario-select", "value"),
         State("solver-time-limit", "value"),
+        State("scheduling-method", "value"),
     ],
     cancel=[Input("cancel-button", "n_clicks")],
     prevent_initial_call=True,
 )
 def run_optimization_hybrid(
-    run_click: int, solvers: list[int], hybrid_solver: int, scenario: str, time_limit: int
+    run_click: int,
+    solvers: list[int],
+    hybrid_solver: int,
+    scenario: str,
+    time_limit: int,
+    scheduling_method: int
 ) -> RunOptimizationHybridReturn:
     """Runs optimization using the D-Wave hybrid solver.
 
@@ -367,6 +394,7 @@ def run_optimization_hybrid(
             str: Class name for the D-Wave tab.
             str: The label for the D-Wave tab.
             bool: Whether D-Wave solver is running.
+            bool: Whether the scheduling method selector should be disabled.
     """
     if ctx.triggered_id != "run-button" or run_click == 0:
         raise PreventUpdate
@@ -375,14 +403,19 @@ def run_optimization_hybrid(
         return RunOptimizationHybridReturn(
             dwave_tab_class="tab",
             dwave_tab_label=DWAVE_TAB_LABEL,
-            running_dwave=False
+            running_dwave=False,
         )
 
     start = time.perf_counter()
-    model_data = JobShopData()
-    filename = SCENARIOS[scenario]
+    is_jss = scheduling_method is SchedulingMethodOptions.JSS.value
+    model_data = ShopSchedulingData(is_jss=is_jss)
 
-    model_data.load_from_file(DATA_PATH.joinpath(filename))
+    if is_jss:
+        filename = SCENARIOS_JSS[scenario]
+        model_data.load_from_file(DATA_PATH_JSS.joinpath(filename))
+    else:
+        filename = SCENARIOS_FSS[scenario]
+        model_data.load_from_file(DATA_PATH_FSS.joinpath(filename))
 
     running_nl = not SHOW_CQM or hybrid_solver is HybridSamplerType.NL.value
 
@@ -391,6 +424,7 @@ def run_optimization_hybrid(
         use_scipy_solver=False,
         use_nl_solver=running_nl,
         solver_time_limit=time_limit,
+        is_jss=is_jss
     )
 
     fig_jobsort = generate_gantt_chart(results, sort_by="JobInt")
@@ -415,6 +449,7 @@ def run_optimization_hybrid(
         dwave_tab_class="tab-success",
         dwave_tab_label=DWAVE_TAB_LABEL,
         running_dwave=False,
+        scheduling_method_disabled=False,
     )
 
 
@@ -430,6 +465,7 @@ class RunOptimizationScipyReturn(NamedTuple):
     highs_tab_class: str = dash.no_update
     highs_tab_label: str = dash.no_update
     running_classical: bool = dash.no_update
+    scheduling_method_disabled: bool = dash.no_update
 
 
 @app.callback(
@@ -442,18 +478,20 @@ class RunOptimizationScipyReturn(NamedTuple):
     Output("highs-tab", "className"),
     Output("highs-tab", "label"),
     Output("running-classical", "data"),
+    Output("scheduling-method", "disabled"),
     background=True,
     inputs=[
         Input("run-button", "n_clicks"),
         State("solver-select", "value"),
         State("scenario-select", "value"),
         State("solver-time-limit", "value"),
+        State("scheduling-method", "value"),
     ],
     cancel=[Input("cancel-button", "n_clicks")],
     prevent_initial_call=True,
 )
 def run_optimization_scipy(
-    run_click: int, solvers: list[int], scenario: str, time_limit: int
+    run_click: int, solvers: list[int], scenario: str, time_limit: int, scheduling_method: int
 ) -> RunOptimizationScipyReturn:
     """Runs optimization using the HiGHS solver.
 
@@ -476,6 +514,7 @@ def run_optimization_scipy(
             str: Class name for the Classical tab.
             str: The label for the Classical tab.
             bool: Whether Classical solver is running.
+            bool: Whether the scheduling method selector should be disabled.
     """
     if ctx.triggered_id != "run-button" or run_click == 0:
         raise PreventUpdate
@@ -484,19 +523,25 @@ def run_optimization_scipy(
         return RunOptimizationScipyReturn(
             highs_tab_class="tab",
             highs_tab_label=CLASSICAL_TAB_LABEL,
-            running_classical=False
+            running_classical=False,
         )
 
     start = time.perf_counter()
-    model_data = JobShopData()
-    filename = SCENARIOS[scenario]
+    is_jss = scheduling_method is SchedulingMethodOptions.JSS.value
+    model_data = ShopSchedulingData(is_jss=is_jss)
 
-    model_data.load_from_file(DATA_PATH.joinpath(filename))
+    if is_jss:
+        filename = SCENARIOS_JSS[scenario]
+        model_data.load_from_file(DATA_PATH_JSS.joinpath(filename))
+    else:
+        filename = SCENARIOS_FSS[scenario]
+        model_data.load_from_file(DATA_PATH_FSS.joinpath(filename))
 
     results = run_shop_scheduler(
         model_data,
         use_scipy_solver=True,
         solver_time_limit=time_limit,
+        is_jss=is_jss
     )
 
     solution_stats_table = generate_problem_details_table(
@@ -521,6 +566,7 @@ def run_optimization_scipy(
             highs_tab_class="tab-fail",
             highs_tab_label=CLASSICAL_TAB_LABEL,
             running_classical=False,
+            scheduling_method_disabled=False,
         )
 
     fig_jobsort = generate_gantt_chart(results, sort_by="JobInt")
@@ -536,17 +582,20 @@ def run_optimization_scipy(
         highs_tab_class="tab-success",
         highs_tab_label=CLASSICAL_TAB_LABEL,
         running_classical=False,
+        scheduling_method_disabled=False,
     )
 
 
 @app.callback(
     Output({"type": "gantt-chart-unscheduled", "index": 0}, "figure"),
     Output({"type": "gantt-chart-conflicts", "index": 0}, "figure"),
+    Output("scenario-select", "value"),
     [
         Input("scenario-select", "value"),
+        State("scheduling-method", "value"),
     ],
 )
-def generate_unscheduled_gantt_chart(scenario: str) -> go.Figure:
+def generate_unscheduled_gantt_chart(scenario: str, scheduling_method: int) -> go.Figure:
     """Generates a Gantt chart of the unscheduled tasks for the given scenario.
 
     Args:
@@ -555,13 +604,20 @@ def generate_unscheduled_gantt_chart(scenario: str) -> go.Figure:
     Returns:
         go.Figure: A Plotly figure object with the input data
     """
-    model_data = JobShopData()
+    is_jss = scheduling_method is SchedulingMethodOptions.JSS.value
+    model_data = ShopSchedulingData(is_jss=is_jss)
 
-    model_data.load_from_file(DATA_PATH.joinpath(SCENARIOS[scenario]))
+    if is_jss:
+        scenario_update = scenario if scenario in SCENARIOS_JSS else SCENARIO_OPTIONS_JSS[0]["value"]
+        model_data.load_from_file(DATA_PATH_JSS.joinpath(SCENARIOS_JSS[scenario_update]))
+    else:
+        scenario_update = scenario if scenario in SCENARIOS_FSS else SCENARIO_OPTIONS_FSS[0]["value"]
+        model_data.load_from_file(DATA_PATH_FSS.joinpath(SCENARIOS_FSS[scenario_update]))
+
     df = get_minimum_task_times(model_data)
     fig = generate_gantt_chart(df)
     fig_conflicts = generate_gantt_chart(df, show_conflicts=True)
-    return fig, fig_conflicts
+    return fig, fig_conflicts, scenario_update
 
 
 # import the html code and sets it in the app

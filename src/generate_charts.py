@@ -21,19 +21,19 @@ from dash import DiskcacheManager
 cache = diskcache.Cache("./cache")
 background_callback_manager = DiskcacheManager(cache)
 
-from src.model_data import JobShopData
+from src.model_data import ShopSchedulingData
 
 Y_AXIS_LABEL = "Job"
 COLOR_LABEL = "Operation"  # must be operation label
 
 
-def get_minimum_task_times(job_shop_data: JobShopData) -> pd.DataFrame:
-    """Takes a JobShopData object, gets the minimum time each
+def get_minimum_task_times(job_shop_data: ShopSchedulingData) -> pd.DataFrame:
+    """Takes a ShopSchedulingData object, gets the minimum time each
     task can be completed by, and generates the Jobs to Be Scheduled
     Gantt chart.
 
     Args:
-        job_shop_data (JobShopData): The data for the job shop scheduling problem.
+        job_shop_data (ShopSchedulingData): The data for the job shop scheduling problem.
 
     Returns:
         pd.DataFrame: A DataFrame of the jobs to be scheduled including Task, Start, Finish,
@@ -129,14 +129,13 @@ def generate_gantt_chart(
     df[COLOR_LABEL] = df[COLOR_LABEL].astype(str)
     df[Y_AXIS_LABEL] = df[Y_AXIS_LABEL].astype(str)
 
-    # get the unique resource labels in order
-    color_labels = sorted(df[COLOR_LABEL].unique(), key=lambda r: int(r.split(".")[0]))
+    try:
+        # get the unique resource labels in order
+        color_labels = sorted(df[COLOR_LABEL].unique(), key=lambda r: int(r.split(".")[0]))
+    except:
+        color_labels = df[COLOR_LABEL].unique()
     num_items = len(color_labels)
     colorscale = "Agsunset"
-    colors = px.colors.sample_colorscale(
-        colorscale, [n / (num_items - 1) for n in range(num_items)]
-    )
-    color_map = dict(zip(color_labels, colors))
 
     df = df.sort_values(by=[sort_by], ascending=False)
     df = df.drop(columns=["JobInt"])
@@ -149,8 +148,9 @@ def generate_gantt_chart(
         color=COLOR_LABEL,
         pattern_shape="Conflicts" if show_conflicts else None,
         pattern_shape_map={"Yes": "/", "No": ""},
-        color_discrete_sequence=[color_map[label] for label in color_labels],
-        category_orders={COLOR_LABEL: color_labels},
+        color_discrete_sequence=px.colors.sample_colorscale(
+            colorscale, [n / (num_items - 1) for n in range(num_items)]
+        ),
     )
 
     # Update legend to remove conflict text and duplicates.
@@ -158,11 +158,10 @@ def generate_gantt_chart(
     for i, trace in enumerate(fig.select_traces()):
         label = trace.legendgroup.split(",")[0]
         if label not in unique_labels:
-            trace.update({"name": label, "legendrank": i})
+            trace.update({"name": label})
             unique_labels.add(label)
         else:
-            fig.update_traces({"showlegend": False}, {"name": label})
-            trace.update({"name": label, "legendrank": i})
+            trace.update({"showlegend": False})
 
     fig.update_legends({"title": {"text": COLOR_LABEL}})  # Update legend title.
 

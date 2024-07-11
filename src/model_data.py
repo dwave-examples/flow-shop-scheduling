@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Union
 
 sys.path.append("./src")
-from app_configs import RESOURCE_NAMES
-from utils.utils import read_or_library_instance, read_taillard_instance
+from app_configs import RESOURCE_NAMES_FSS, RESOURCE_NAMES_JSS
+from utils.utils import read_instance, read_or_library_instance, read_taillard_instance_fss, read_taillard_instance_jss
 
 if TYPE_CHECKING:
     from numpy.typing import array_like
@@ -40,20 +40,23 @@ class Task:
         )
 
 
-class JobShopData:
-    """This class holds and manages the data for a job shop scheduling problem."""
+class ShopSchedulingData:
+    """This class holds and manages the data for a shop scheduling problem."""
 
-    def __init__(self, jobs: Iterable[str] = [], resources: Iterable[str] = []):
-        """Initializes the data for a job shop scheduling problem.
+    def __init__(self, jobs: Iterable[str] = [], resources: Iterable[str] = [], is_jss: bool = True):
+        """Initializes the data for a shop scheduling problem.
 
         Args:
             jobs (Iterable[str]): The jobs to be scheduled.
             resources (Iterable[str]): The resources to be used.
+            is_jss (bool): Whether the data is Job Shop data (or Flow Shop).
         """
+        self._is_jss = is_jss
         self._jobs = set(jobs)
         self._resources = set(resources)
         self._job_tasks = {job: [] for job in jobs}
         self._processing_times = None
+        self._machines = None
         self._resource_names = None
 
     @property
@@ -66,6 +69,17 @@ class JobShopData:
             `n` is on machine `m`.
         """
         return self._processing_times
+
+    @property
+    def machines(self) -> array_like:
+        """Returns the machine order for the problem.
+
+        Returns:
+            array_like: Machines, as an :math:`n \times m` |array-like|_ of
+            integers, where ``machines[n, m]`` where ``machines[n, :]``
+            is the order of machines that job ``n`` will be processed on.
+        """
+        return self._machines
 
     @property
     def jobs(self) -> Iterable[str]:
@@ -102,6 +116,15 @@ class JobShopData:
             Iterable[Iterable[Task]]: The tasks in the data, grouped by job.
         """
         return self._job_tasks
+
+    @property
+    def is_jss(self) -> bool:
+        """Returns whether the data is Job Shop data.
+
+        Returns:
+            bool: Whether the data is Job Shop data (or Flow Shop).
+        """
+        return self._is_jss
 
     def get_tasks(self) -> Iterable[Task]:
         """Returns the tasks in the data.
@@ -320,21 +343,47 @@ class JobShopData:
             if task.resource == resource
         ]
 
+    def add_tasks_jss(self) -> None:
+        """Loads data from a dictionary."""
+        resource_mapping = {}
+
+        for job, job_machine_order in enumerate(self.machines):
+            for machine in job_machine_order:
+                duration = self.processing_times[job][machine]
+                if self._resource_names is not None:
+                    if machine not in resource_mapping:
+                        resource_name = self._resource_names[machine]
+
+                        resource_mapping[machine] = resource_name
+                        resource_mapping[machine] = resource_name
+                    else:
+                        resource_name = resource_mapping[machine]
+                else:
+                    resource_name = machine
+                self.add_task(Task(str(job), duration=duration, resource=resource_name))
+
     def load_from_file(self, filename: Union[Path, str]) -> None:
         """Loads data from a file.
 
         Args:
             filename (str): the file to load data from
         """
-        if "tai" in Path(filename).name:
-            self._processing_times = read_taillard_instance(filename)
+        if "taillard" in Path(filename).name:
+            self._processing_times, self._machines = read_taillard_instance_jss(filename)
+        elif "tai" in Path(filename).name:
+            self._processing_times = read_taillard_instance_fss(filename)
+        elif "instance" in Path(filename).name:
+            self._processing_times, self._machines = read_instance(filename)
         else:
             self._processing_times = read_or_library_instance(filename)
 
-        self._resource_names = RESOURCE_NAMES[f"cargo_loading_{len(self.processing_times)}"]
-
-        for machine, machine_times in enumerate(self.processing_times):
-            for job, duration in enumerate(machine_times):
-                self.add_task(
-                    Task(str(job), duration=duration, resource=self._resource_names[machine])
-                )
+        if self._is_jss:
+            self._resource_names = RESOURCE_NAMES_JSS
+            self.add_tasks_jss()
+        else:
+            self._resource_names = RESOURCE_NAMES_FSS[f"cargo_loading_{len(self.processing_times)}"]
+            for machine, machine_times in enumerate(self.processing_times):
+                for job, duration in enumerate(machine_times):
+                    self.add_task(
+                        Task(str(job), duration=duration, resource=self._resource_names[machine])
+                    )

@@ -39,7 +39,8 @@ from app_configs import (
     DESCRIPTION,
     DWAVE_TAB_LABEL,
     MAIN_HEADER,
-    SCENARIOS,
+    SCENARIOS_FSS,
+    SCENARIOS_JSS,
     SHOW_CQM,
     SOLVER_TIME,
     THEME_COLOR_SECONDARY,
@@ -63,6 +64,8 @@ scheduling_method_options = [
     {"label": label, "value": scheduling_method_option.value}
     for scheduling_method_option, label in SCHEDULING_METHOD_OPTIONS.items()
 ]
+SCENARIO_OPTIONS_JSS = [{"label": scenario, "value": scenario} for scenario in SCENARIOS_JSS]
+SCENARIO_OPTIONS_FSS = [{"label": scenario, "value": scenario} for scenario in SCENARIOS_FSS]
 
 
 def description_card():
@@ -193,7 +196,6 @@ def generate_control_card() -> html.Div:
         model, and solver.
     """
 
-    scenario_options = [{"label": scenario, "value": scenario} for scenario in SCENARIOS]
     sampler_options = [
         {"label": label, "value": sampler_type.value}
         for sampler_type, label in SAMPLER_TYPES.items()
@@ -209,7 +211,7 @@ def generate_control_card() -> html.Div:
             dropdown(
                 "Scenario (jobs x operations)",
                 "scenario-select",
-                scenario_options,
+                SCENARIO_OPTIONS_JSS,
             ),
             checklist(
                 "Solver (hybrid and/or classical)",

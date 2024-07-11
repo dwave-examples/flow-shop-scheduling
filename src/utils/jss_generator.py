@@ -69,7 +69,7 @@ if __name__ == "__main__":
     parser.add_argument("m", type=int, help="num of machines")
     parser.add_argument("d", type=int, help="maximum processing duration")
     parser.add_argument(
-        "-path", type=str, help="folder location to store generated instance file", default="input"
+        "-path", type=str, help="folder location to store generated instance file", default="input/fss"
     )
     args = parser.parse_args()
     num_jobs = args.n

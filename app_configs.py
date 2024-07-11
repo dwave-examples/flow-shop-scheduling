@@ -48,10 +48,22 @@ DWAVE_TAB_LABEL = "Quantum Hybrid Results"
 
 SHOW_CQM = True
 
+# The list of scenarios that the user can choose from in the app.
+# These can be found in the 'input' directory.
+SCENARIOS_JSS = {
+    "3x3": "instance3_3.txt",
+    "5x5": "instance5_5.txt",
+    "10x10": "instance10_10.txt",
+    "15x15": "taillard15_15.txt",
+    "20x15": "instance20_15.txt",
+    "20x25": "instance20_25.txt",
+    "30x30": "instance30_30.txt",
+}
+
 # The list of scenarios (sorted by jobs, then operations) that the user
 # can choose from in the app. These can be found in the 'input' directory.
 # Only the first Taillard instance for each size is loaded directly.
-SCENARIOS = {
+SCENARIOS_FSS = {
     "Carlier 7x7": "car7",
     "Carlier 8x8": "car8",
     "Carlier 8x9": "car6",
@@ -94,4 +106,5 @@ SOLVER_TIME = {
 }
 
 # The list of resources that the user can choose from in the app
-RESOURCE_NAMES = json.load(open("./src/data/resource_names.json", "r"))
+RESOURCE_NAMES_FSS = json.load(open("./src/data/resource_names_fss.json", "r"))
+RESOURCE_NAMES_JSS = json.load(open("./src/data/resource_names_jss.json", "r"))

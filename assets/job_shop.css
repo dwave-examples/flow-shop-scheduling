@@ -90,6 +90,10 @@ body {
     line-height: 1.6rem;
 }
 
+#banner .Select.is-disabled .Select-value-label {
+    color: #d6d6d6;
+}
+
 #banner .VirtualizedSelectOption {
     justify-content: center;
 }

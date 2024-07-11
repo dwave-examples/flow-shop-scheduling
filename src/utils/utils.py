@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-from collections import defaultdict
 from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Union
@@ -82,7 +81,8 @@ def read_instance(instance_path: str) -> dict:
         Job_dict: dictionary containing jobs as keys and a list of tuple of
                 machines and their processing time as values.
     """
-    job_dict = defaultdict(list)
+    processing_times = []
+    machines = []
 
     with open(instance_path) as f:
         for i, line in enumerate(f):
@@ -94,14 +94,20 @@ def read_instance(instance_path: str) -> dict:
                 continue
             else:
                 job_task = list(map(int, line.split()))
-                job_dict[i - 5] = [
-                    x
-                    for x in zip(job_task[1::2], job_task[2::2])  # machines  # processing duration
-                ]
-        assert len(job_dict) == num_jobs
-        assert len(job_dict[0]) == num_machines
+                machines.append(job_task[1::2])
+                processing_times.append(job_task[2::2])
 
-        return job_dict
+        processing_times = np.array(processing_times)
+        machine_ordered_processing_times = np.zeros(processing_times.shape, dtype=int)
+        machines = np.array(machines)
+        for job, machine_order in enumerate(machines):
+            for machine_index, machine in enumerate(machine_order):
+                machine_ordered_processing_times[job][machine] = processing_times[job][machine_index]
+
+        assert len(processing_times) == num_jobs
+        assert len(processing_times[0]) == num_machines
+
+        return machine_ordered_processing_times, machines
 
 
 def write_solution_to_file(
@@ -146,7 +152,58 @@ def write_solution_to_file(
     print(f"\nSaved schedule to " f"{os.path.join(os.getcwd(), solution_file_path)}")
 
 
-def read_taillard_instance(instance_path: Union[Path, str]) -> array_like:
+def read_taillard_instance_jss(instance_path: str) -> dict:
+    """A method that reads input instance file from the taillard
+    dataset
+    Args:
+        instance_path:  path to the job shop instance file
+    Returns:
+        Job_dict: dictionary containing jobs as keys and a list of tuple of
+                machines and their processing time as values.
+    """
+    with open(instance_path) as f:
+        # ignore the first line
+        f.readline()
+        # the second line contains Nb of jobs, Nb of Machines as first two values
+        line = f.readline()
+        num_jobs = int(line.split()[0])
+        num_machines = int(line.split()[1])
+        # ignore the next line
+        f.readline()
+
+        # the next lines contain the processing times for each job for each resource; read this in as
+        # as matrix until "Machine" is encountered
+        processing_times = []
+        line = f.readline()
+        while "Machine" not in line:
+            processing_times.append(list(map(int, line.split())))
+            line = f.readline()
+
+        # the next lines contain the machine order for each job; read this in as
+        # as matrix until a blank line is encountered
+        machines = []
+        line = f.readline()
+        while line != "\n" and line != "" and line is not None:
+            machines.append(list(map(int, line.split())))
+            line = f.readline()
+
+        assert len(processing_times) == num_jobs
+        assert len(processing_times[0]) == num_machines
+
+        machines = np.array(machines)
+        if machines.all():
+            machines -= 1
+
+        processing_times = np.array(processing_times)
+        machine_ordered_processing_times = np.zeros(processing_times.shape, dtype=int)
+        for job, machine_order in enumerate(machines):
+            for machine_index, machine in enumerate(machine_order):
+                machine_ordered_processing_times[job][machine] = processing_times[job][machine_index]
+
+        return machine_ordered_processing_times, machines
+
+
+def read_taillard_instance_fss(instance_path: Union[Path, str]) -> array_like:
     """Reads input instance file from the taillard dataset
 
     Args:

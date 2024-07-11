@@ -7,16 +7,16 @@ import sys
 import numpy as np
 
 sys.path.append("./src")
-from model_data import JobShopData
+from model_data import ShopSchedulingData
 
 
 class GreedyJobShop:
 
-    def __init__(self, model_data: JobShopData):
+    def __init__(self, model_data: ShopSchedulingData):
         """Initializes the GreedyJobShop class.
 
         Args:
-            model_data (JobShopData): A JobShopData object that holds
+            model_data (ShopSchedulingData): A ShopSchedulingData object that holds
                 the data for this job shop
         """
         self.model_data = model_data

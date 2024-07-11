@@ -37,7 +37,7 @@ To run the flow shop scheduler without the Dash interface, from the command line
 
 This calls the FSS algorithm for the input file. Command line arguments are as follows:
 - -h (or --help): show this help message and exit
-- -i (--instance): path to the input instance file (default: input/tai20_5.txt); see `app_configs.py` for instance names
+- -i (--instance): path to the input instance file (default: input/fss/tai20_5.txt); see `app_configs.py` for instance names
 - -tl (--time_limit) time limit in seconds (default: None)
 - -os (--output_solution): path to the output solution file (default: output/solution.txt)
 - -op (--output_plot): path to the output plot file (default: output/schedule.png)
