@@ -361,7 +361,7 @@ def set_html(app):
                                                         className="gantt-heading",
                                                         children=[
                                                             html.H3(
-                                                                "Unscheduled Jobs and Operations",
+                                                                "Unscheduled Steps and Workflows",
                                                                 className="gantt-title",
                                                             ),
                                                             html.Button(

@@ -1,104 +1,65 @@
 {
-  "cargo_loading_20": [
-    "1. Identify Container",
-    "2. Attach Crane",
-    "3. Lift Container",
-    "4. Place Container",
-    "5. Detach Crane",
-    "6. Inspect Container",
-    "7. Open Container",
-    "8. Locate Cargo",
-    "9. Inspect Cargo",
-    "10. Unload Cargo",
-    "11. Transport Cargo",
-    "12. Reinspect Cargo",
-    "13. Sort Cargo",
-    "14. Prepare Documentation",
-    "15. Package Cargo",
-    "16. Label Cargo",
-    "17. Load Cargo",
-    "18. Secure Cargo",
-    "19. Verify Cargo",
-    "20. Dispatch Truck"
+  "workflow_10": [
+    "1. Spin up environment",
+    "2. Checkout code",
+    "3. Install dependencies",
+    "4. Install main package",
+    "5. Run unit tests",
+    "6. Build artifacts",
+    "7. Upload artifacts",
+    "8. Build documentation",
+    "9. Run documentation tests",
+    "10. Upload documentation"
   ],
-  "cargo_loading_15": [
-    "1. Identify Container",
-    "2. Lift Container",
-    "3. Inspect Container",
-    "4. Open Container",
-    "5. Locate Cargo",
-    "6. Inspect Cargo",
-    "7. Unload Cargo",
-    "8. Transport Cargo",
-    "9. Sort Cargo",
-    "10. Package Cargo",
-    "11. Label Cargo",
-    "12. Load Cargo",
-    "13. Secure Cargo",
-    "14. Verify Cargo",
-    "15. Dispatch Truck"
+  "workflow_9": [
+    "1. Spin up environment",
+    "2. Checkout code",
+    "3. Install package",
+    "4. Run unit tests",
+    "5. Build artifacts",
+    "6. Upload artifacts",
+    "7. Build documentation",
+    "8. Run documentation tests",
+    "9. Upload documentation"
   ],
-  "cargo_loading_10": [
-    "1. Identify Container",
-    "2. Lift Container",
-    "3. Open Container",
-    "4. Locate Cargo",
-    "5. Inspect Cargo",
-    "6. Unload Cargo",
-    "7. Sort Cargo",
-    "8. Package Cargo",
-    "9. Load Cargo",
-    "10. Dispatch Truck"
+  "workflow_8": [
+    "1. Spin up environment",
+    "2. Checkout code",
+    "3. Install dependencies",
+    "4. Install main package",
+    "5. Run unit tests",
+    "6. Build artifacts",
+    "7. Upload artifacts",
+    "8. Build documentation"
   ],
-  "cargo_loading_9": [
-    "1. Identify Container",
-    "2. Lift Container",
-    "3. Open Container",
-    "4. Locate Cargo",
-    "5. Inspect Cargo",
-    "6. Unload Cargo",
-    "7. Package Cargo",
-    "8. Load Cargo",
-    "9. Dispatch Truck"
+  "workflow_7": [
+    "1. Spin up environment",
+    "2. Checkout code",
+    "3. Install package",
+    "4. Run unit tests",
+    "5. Build artifacts",
+    "6. Upload artifacts",
+    "7. Build documentation"
   ],
-  "cargo_loading_8": [
-    "1. Identify Container",
-    "2. Lift Container",
-    "3. Open Container",
-    "4. Locate Cargo",
-    "5. Inspect Cargo",
-    "6. Unload Cargo",
-    "7. Load Cargo",
-    "8. Dispatch Truck"
+  "workflow_6": [
+    "1. Spin up environment",
+    "2. Install package",
+    "3. Run unit tests",
+    "4. Build artifacts",
+    "5. Upload artifacts",
+    "6. Build documentation"
   ],
-  "cargo_loading_7": [
-    "1. Identify Container",
-    "2. Lift Container",
-    "3. Open Container",
-    "4. Inspect Cargo",
-    "5. Unload Cargo",
-    "6. Load Cargo",
-    "7. Dispatch Truck"
+  "workflow_5": [
+    "1. Spin up environment",
+    "2. Install package",
+    "3. Run unit tests",
+    "4. Build artifacts",
+    "5. Build documentation"
   ],
-  "cargo_loading_6": [
-    "1. Identify Container",
-    "2. Lift Container",
-    "3. Open Container",
-    "4. Unload Cargo",
-    "5. Load Cargo",
-    "6. Dispatch Truck"
-  ],
-  "cargo_loading_5": [
-    "1. Lift Container",
-    "2. Open Container",
-    "3. Unload Cargo",
-    "4. Load Cargo",
-    "5. Dispatch Truck"
-  ],
-  "cargo_loading_4": [
-    "1. Lift Container",
-    "2. Unload Cargo",
-    "3. Load Cargo",
-    "4. Dispatch Truck"
+  "workflow_4": [
+    "1. Install package",
+    "2. Run unit tests",
+    "3. Build artifacts",
+    "4. Build documentation"
   ]
 }

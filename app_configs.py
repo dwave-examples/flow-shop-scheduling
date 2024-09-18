@@ -29,12 +29,11 @@ THEME_COLOR_SECONDARY = "#2A7DE1"  # D-Wave blue default #2A7DE1
 
 THUMBNAIL = "assets/dwave_logo.svg"
 
-APP_TITLE = "FSS Demo"
-MAIN_HEADER = "Flow Shop Scheduling"
+APP_TITLE = "Workflow Optimization"
+MAIN_HEADER = "Workflow Optimization"
 DESCRIPTION = """\
-Run the cargo-loading themed flow shop scheduling (FSS) problem for several
-different scenarios. Each job must execute, in order, all operations listed
-on the right.
+Optimize CI workflows for different scenarios using a flow shop scheduling (FSS)
+formulation. Each job must execute, in order, all operations listed on the right.
 """
 
 CLASSICAL_TAB_LABEL = "Classical Results"
@@ -46,9 +45,9 @@ SHOW_CQM = True
 # can choose from in the app. These can be found in the 'input' directory.
 # Only the first Taillard instance for each size is loaded directly.
 SCENARIOS = {
-    "Carlier 7x7": "car7",
-    "Carlier 8x8": "car8",
-    "Carlier 8x9": "car6",
+    # "Carlier 7x7": "car7",
+    # "Carlier 8x8": "car8",
+    # "Carlier 8x9": "car6",
     "Carlier 10x6": "car5",
     "Carlier 11x5": "car1",
     "Carlier 12x5": "car3",

@@ -331,7 +331,7 @@ class JobShopData:
         else:
             self._processing_times = read_or_library_instance(filename)
 
-        self._resource_names = RESOURCE_NAMES[f"cargo_loading_{len(self.processing_times)}"]
+        self._resource_names = RESOURCE_NAMES[f"workflow_{len(self.processing_times)}"]
 
         for machine, machine_times in enumerate(self.processing_times):
             for job, duration in enumerate(machine_times):

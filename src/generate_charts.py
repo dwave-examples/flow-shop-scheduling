@@ -23,8 +23,8 @@ background_callback_manager = DiskcacheManager(cache)
 
 from src.model_data import JobShopData
 
-Y_AXIS_LABEL = "Job"
-COLOR_LABEL = "Operation"  # must be operation label
+Y_AXIS_LABEL = "Workflow"
+COLOR_LABEL = "Step"  # must be operation label
 
 
 def get_minimum_task_times(job_shop_data: JobShopData) -> pd.DataFrame:
@@ -132,7 +132,7 @@ def generate_gantt_chart(
     # get the unique resource labels in order
     color_labels = sorted(df[COLOR_LABEL].unique(), key=lambda r: int(r.split(".")[0]))
     num_items = len(color_labels)
-    colorscale = "Agsunset"
+    colorscale = "haline"
     colors = px.colors.sample_colorscale(
         colorscale, [n / (num_items - 1) for n in range(num_items)]
     )
@@ -175,6 +175,6 @@ def generate_gantt_chart(
     fig.layout.xaxis.type = "linear"
     fig.update_layout(
         margin=dict(l=20, r=20, t=10, b=10),
-        xaxis_title="Time Period",
+        xaxis_title="Time",
     )
     return fig

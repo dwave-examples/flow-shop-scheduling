@@ -354,7 +354,7 @@ class JobShopSchedulingModel:
         df_rows = []
         for (j, i), (task, start, dur) in self.solution.items():
             df_rows.append([j, task, start, start + dur, i])
-        df = pd.DataFrame(df_rows, columns=["Job", "Task", "Start", "Finish", "Operation"])
+        df = pd.DataFrame(df_rows, columns=["Workflow", "Task", "Start", "Finish", "Step"])
         return df
 
 
