@@ -36,6 +36,7 @@ from dash import dcc, html
 
 from app_configs import (
     CLASSICAL_TAB_LABEL,
+    DEFAULT_SCENARIO,
     DESCRIPTION,
     DWAVE_TAB_LABEL,
     MAIN_HEADER,
@@ -66,7 +67,7 @@ def description_card():
 
 
 def dropdown(
-    label: str, id: str, options: list, wrapper_id: str = "", wrapper_class_name: str = ""
+    label: str, id: str, options: list, wrapper_id: str = "", wrapper_class_name: str = "", value: str = ""
 ) -> html.Div:
     """Slider element for value selection."""
     return html.Div(
@@ -77,7 +78,7 @@ def dropdown(
             dcc.Dropdown(
                 id=id,
                 options=options,
-                value=options[0]["value"],
+                value=value or options[0]["value"],
                 clearable=False,
                 searchable=False,
             ),
@@ -199,6 +200,7 @@ def generate_control_card() -> html.Div:
                 "Scenario (jobs x operations)",
                 "scenario-select",
                 scenario_options,
+                value=DEFAULT_SCENARIO,
             ),
             checklist(
                 "Solver (hybrid and/or classical)",

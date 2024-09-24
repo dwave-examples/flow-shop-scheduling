@@ -76,6 +76,8 @@ SCENARIOS = {
     # "Taillard 500x20": "tai500_20.txt",
 }
 
+DEFAULT_SCENARIO = "Carlier 12x5"
+
 OR_INSTANCES = "flowshop1.txt"
 
 # solver time limits in seconds (value means default)
