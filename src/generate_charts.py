@@ -15,7 +15,7 @@
 import diskcache
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objs as go
+import plotly.graph_objects as go
 from dash import DiskcacheManager
 
 cache = diskcache.Cache("./cache")
