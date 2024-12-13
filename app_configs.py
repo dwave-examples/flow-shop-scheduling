@@ -46,11 +46,6 @@ SHOW_CQM = True
 # can choose from in the app. These can be found in the 'input' directory.
 # Only the first Taillard instance for each size is loaded directly.
 SCENARIOS = {
-    "Carlier 7x7": "car7",
-    "Carlier 8x8": "car8",
-    "Carlier 8x9": "car6",
-    "Carlier 10x6": "car5",
-    "Carlier 11x5": "car1",
     "Carlier 12x5": "car3",
     "Carlier 13x4": "car2",
     "Carlier 14x4": "car4",
