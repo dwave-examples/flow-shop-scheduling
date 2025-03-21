@@ -119,13 +119,11 @@ class JobShopSchedulingModel:
                     "x{}_{}".format(job, resource), lower_bound=lb, upper_bound=ub
                 )
 
-        # Add binary variable which equals to 1 if job j precedes job k on
-        # machine i
+        # Add binary variable which equals to 1 if job j precedes job k
         self._y = {
-            (j, k, i): Binary("y{}_{}_{}".format(j, k, i))
+            (j, k): Binary("y{}_{}".format(j, k))
             for j in self.model_data.jobs
             for k in self.model_data.jobs
-            for i in self.model_data.resources
         }
 
     def define_cqm_objective(self) -> None:
@@ -178,7 +176,7 @@ class JobShopSchedulingModel:
                             self._x[(j, i)]
                             - self._x[(k, i)]
                             - task_k.duration
-                            + self._y[(j, k, i)] * V
+                            + self._y[(j, k)] * V
                             >= 0,
                             label="disjunction1{}_j{}_m{}".format(j, k, i),
                         )
@@ -188,7 +186,7 @@ class JobShopSchedulingModel:
                             self._x[(k, i)]
                             - self._x[(j, i)]
                             - task_j.duration
-                            + (1 - self._y[(j, k, i)]) * V
+                            + (1 - self._y[(j, k)]) * V
                             >= 0,
                             label="disjunction2{}_j{}_m{}".format(j, k, i),
                         )
