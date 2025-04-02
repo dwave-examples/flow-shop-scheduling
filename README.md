@@ -10,10 +10,10 @@
 This example demonstrates three ways of formulating and optimizing FSS:
 
 *    Formulating a
-     [nonlinear model](https://docs.ocean.dwavesys.com/en/stable/concepts/nl_model.html)
+     [nonlinear model](https://docs.dwavequantum.com/en/latest/concepts/models.html#nonlinear-model)
      and solving on a Leap hybrid nonlinear-model solver
 *    Formulating a
-     [constrained quadratic model](https://docs.ocean.dwavesys.com/en/stable/concepts/cqm.html)
+     [constrained quadratic model](https://docs.dwavequantum.com/en/latest/concepts/models.html#constrained-quadratic-model)
      (CQM) and solving on a Leap hybrid CQM solver
 *    Formulating a mixed-integer problem and solving on a classical mixed-integer linear solver
 
@@ -21,9 +21,9 @@ This example lets you run the scheduler from either the command line or a visual
 
 ## Usage
 Your development environment should be configured to
-[access Leap’s Solvers](https://docs.ocean.dwavesys.com/en/stable/overview/sapi.html).
+[access Leap’s Solvers](https://docs.dwavequantum.com/en/latest/ocean/sapi_access_basic.html).
 You can see information about supported IDEs and authorizing access to your
-Leap account [here](https://docs.dwavesys.com/docs/latest/doc_leap_dev_env.html).
+Leap account [here](https://docs.dwavequantum.com/en/latest/leap_sapi/dev_env.html).
 
 To run the flow shop demo with the visual interface, from the command line enter
 
@@ -83,7 +83,7 @@ The objective is to minimize the makespan (`w`) of the given FSS problem.
 
 The nonlinear model represents the problem using only the job order for the machines. This is 
 sufficient to construct feasible, compact solutions. In seeking a minimum, the model uses Ocean's
-[dwave-optimization](https://docs.ocean.dwavesys.com/en/stable/docs_optimization/sdk_index.html)
+[dwave-optimization](https://docs.dwavequantum.com/en/latest/ocean/api_ref_optimization/index.html)
 package's ``ListVariable`` to efficiently permutate the order of jobs.
 
 Typically, solver performance strongly depends on the size of the solution space for the modeled
