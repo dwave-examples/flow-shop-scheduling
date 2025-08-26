@@ -5,14 +5,13 @@
 # Flow Shop Scheduling
 
 [Job shop scheduling](https://en.wikipedia.org/wiki/Job-shop_scheduling) (JSS)
-is an optimization problem with the goal of scheduling, on a number of machines,
-jobs with diverse orderings of processing on the machines. The objective is to
-minimize the schedule length, also called "makespan," or completion time of the
-last task of all jobs.
+is an optimization problem with the goal of scheduling jobs on a variety of machines,
+where jobs are processed on machines in different orders. The objective is to
+minimize the time it takes to complete all jobs, also known as the "makespan".
 [Flow shop scheduling](https://en.wikipedia.org/wiki/Flow-shop_scheduling) (FSS)
-is a constrained case of JSS where every job uses every machine in the same
+is a constrained case of JSS where each job uses each machine in the same
 order. The machines in FSS problems can often be seen as sequential operations
-to be executed on each job, as is the case in this particular demo.
+to be executed on each job, as is the case in this example.
 
 ![Demo Screenshot](_static/screenshot.png)
 
@@ -20,7 +19,7 @@ This example demonstrates three ways of formulating and optimizing FSS:
 
 *   Formulating a
     [nonlinear model](https://docs.dwavequantum.com/en/latest/concepts/models.html#nonlinear-model)
-    and solving on a Leap hybrid nonlinear-model solver
+    and solving on a Leap hybrid Nonlinear (NL) solver
 *   Formulating a
     [constrained quadratic model](https://docs.dwavequantum.com/en/latest/concepts/models.html#constrained-quadratic-model)
     (CQM) and solving on a Leap hybrid CQM solver
@@ -30,28 +29,54 @@ This example demonstrates three ways of formulating and optimizing FSS:
 This example lets you run the scheduler from either the command line or a visual
 interface built with [Dash](https://dash.plotly.com/).
 
+## Installation
+You can run this example without installation in cloud-based IDEs that support the
+[Development Containers specification](https://containers.dev/supporting) (aka "devcontainers")
+such as GitHub Codespaces.
+
+For development environments that do not support `devcontainers`, install requirements:
+
+```bash
+pip install -r requirements.txt
+```
+
+If you are cloning the repo to your local system, working in a
+[virtual environment](https://docs.python.org/3/library/venv.html) is recommended.
+
 ## Usage
+Your development environment should be configured to access the
+[Leap&trade; quantum cloud service](https://docs.ocean.dwavesys.com/en/stable/overview/sapi.html).
+You can see information about supported IDEs and authorizing access to your Leap account
+[here](https://docs.dwavesys.com/docs/latest/doc_leap_dev_env.html).
 
-Your development environment should be configured to
-[access Leap’s Solvers](https://docs.dwavequantum.com/en/latest/ocean/sapi_access_basic.html).
-You can see information about supported IDEs and authorizing access to your Leap
-account [here](https://docs.dwavequantum.com/en/latest/leap_sapi/dev_env.html).
+Run the following terminal command to start the Dash application:
 
-To run the flow shop demo with the visual interface, from the command line enter
-
-    python app.py
+```bash
+python app.py
+```
 
 Access the user interface with your browser at http://127.0.0.1:8050/.
 
-To run the flow shop scheduler without the Dash interface, from the command line
-enter
+The demo program opens an interface where you can configure problems and submit these problems to
+a solver.
 
-    python job_shop_scheduler.py [-h] [-i INSTANCE] [-tl TIME_LIMIT]
-    [-os OUTPUT_SOLUTION] [-op OUTPUT_PLOT] [-m] [-v] [-q] [-p PROFILE]
-    [-mm MAX_MAKESPAN]
+Configuration options can be found in the [demo_configs.py](demo_configs.py) file.
 
-This calls the FSS algorithm for the input file. Command line arguments are as
-follows:
+> [!NOTE]\
+> If you plan on editing any files while the application is running, please run the application
+with the `--debug` command-line argument for easier debugging:
+`python app.py --debug`
+
+Alternatively, to run the flow shop scheduler without the Dash interface, type the following into
+the terminal:
+
+```bash
+python job_shop_scheduler.py [-h] [-i INSTANCE] [-tl TIME_LIMIT]
+[-os OUTPUT_SOLUTION] [-op OUTPUT_PLOT] [-m] [-v] [-q] [-p PROFILE]
+[-mm MAX_MAKESPAN]
+```
+
+The command line arguments are as follows:
 - -h (or --help): show this help message and exit
 - -i (--instance): path to the input instance file (default: input/tai20_5.txt);
   see `app_configs.py` for instance names
@@ -62,16 +87,15 @@ follows:
   output/schedule.png)
 - -m (--use_scipy_solver): use SciPy's HiGHS solver instead of the CQM solver
   (default: True)
-- -m (--use_nl_solver): use the nonlinear-model solver instead of the CQM solver
+- -m (--use_nl_solver): use the Nonlinear solver instead of the CQM solver
   (default: False)
 - -v (--verbose): print verbose output (default: True)
 - -p (--profile): profile variable to pass to the sampler (default: None)
-- -mm (--max_makespan): manually set an upper-bound on the schedule length
+- -mm (--max_makespan): manually set an upper bound on the schedule length
   instead of auto-calculating (default: None)
 
 ### Problem Instances
-
-Several problem instances are pre-populated under the `input` folder. Some of
+Several problem instances are available in the `input` folder. Some of
 these instances are contained within the `flowshop1.txt` file, retrieved from
 the [OR-Library], and parsed when the demo is initialized. These can be accessed
 as if they were files in the `input` folder, named according to the instance
@@ -80,11 +104,27 @@ endings. Other instances were pulled from [E. Taillard's list] of benchmarking
 instances. If the string "tai" is in the filename, the model expects the format
 used by Taillard.
 
-## Model and Code Overview
+## Problem Description
+The goal of the flow shop scheduling problem is to complete all jobs as quickly as possible.
+The model sets the following objectives and constraints to achieve this goal:
+
+**Objectives**: minimize the total completion time (makespan).
+
+**CQM Constraints:**
+- **Precedence Constraint** ensure that all tasks of a job are executed in the given order.
+- **No-Overlap Constraints** ensure no two jobs can execute on the same machine at the same time.
+- **Makespan Constraint** (optional) all viable solutions must have a makespan under a certain
+threshold.
+
+**NL Constraints:**
+
+The nonlinear model has no need for explicit constraints as the ``ListVariable`` has inherent order
+and the ``max`` symbol ensures no overlap. Setting up the problem with implicit contraints
+significantly reduces the search space which in turn leads to better solutions.
+
+## CQM Model Overview
 
 ### Problem Parameters
-
-These are the parameters of the problem:
 
 - `n`: the number of jobs
 - `m`: the number of machines
@@ -97,7 +137,6 @@ These are the parameters of the problem:
 - `V`:  maximum possible makespan
 
 ### Variables
-
 - `w`: a positive integer variable that defines the completion time (makespan)
   of the JSS
 - `x_(j_i)`: positive integer variables used to model start of each job `j` on
@@ -105,44 +144,14 @@ These are the parameters of the problem:
 - `y_(j_k,i)`: binaries which define if job `k` precedes job `j` on machine `i`
 
 ### Objective
-
 The objective is to minimize the makespan (`w`) of the given FSS problem.
 
-### Nonlinear Model
-
-The nonlinear model represents the problem using only the job order for the
-machines. This is sufficient to construct feasible, compact solutions. In
-seeking a minimum, the model uses Ocean's
-[dwave-optimization](https://docs.dwavequantum.com/en/latest/ocean/api_ref_optimization/index.html)
-package's ``ListVariable`` to efficiently permutate the order of jobs.
-
-Typically, solver performance strongly depends on the size of the solution space
-for the modeled problem: models with smaller spaces of feasible solutions tend
-to perform better than ones with larger spaces. A powerful way to reduce the
-feasible-solutions space is by using variables that act as implicit constraints,
-such as the ``ListVariable`` symbol used here, where the order of jobs is a
-permutation of values. The ``max`` operation is used to extract the start time
-for each job, making sure that there's no overlap between jobs on machines. No
-other constraints are necessary.
-
-As can be seen in the two example images below, switching the job order can
-improve the solution quality, corresponding to a lowering of the completion
-time, or the makespan, for the FSS problem.
-
-![fss_example0](_static/fss_example0.png)
-Above: a solution to a flow shop scheduling problem with 3 jobs on 3 machines.
-
-![fss_example1](_static/fss_example1.png)
-Above: an improved solution to the same problem with a permutated job order.
-
-### Constrained Quadratic Model
-
+### Constraints
 The constrained quadratic model (CQM) requires adding a set of constraints to
 ensure that tasks are executed in order and that no single machine is used by
 different jobs at the same time.
 
 #### Precedence Constraint
-
 Our first constraint, [equation 1](#eq2), enforces the precedence constraint.
 This ensures that all tasks of a job are executed in the given order.
 
@@ -155,7 +164,6 @@ assuming that task 4 takes 12 hours to finish, we add this constraint:
 `x_3_6 >= x_3_1 + 12`
 
 #### No-Overlap Constraints
-
 Our second constraint, [equation 2](#eq2), ensures that multiple jobs don't use
 any machine at the same time.
 ![eq2](_static/eq2.png)          (2)
@@ -180,14 +188,54 @@ There are two cases:
   the jobs don't overlap on a machine.
 
 #### Makespan Constraint
-
 In this demonstration, the maximum makespan can be defined by the user or it
 will be determined using a greedy heuristic. Placing an upper bound on the
 makespan improves the performance of the D-Wave sampler; however, if the upper
 bound is too low then the sampler may fail to find a feasible solution.
 
-## References
+## NL Model Overview
+The model for the Nonlinear solver is constructed using the
+[flow shop scheduling generator](https://docs.dwavequantum.com/en/latest/ocean/api_ref_optimization/generators.html#dwave.optimization.generators.flow_shop_scheduling)
+provided in ``dwave-optimization``.
 
+### Problem Parameters
+
+- `processing_times`: an mxn array where processing_times[m, n] is the duration of job n on
+machine m.
+
+### Variables
+- `order`: An array of integer variables of length num jobs.
+
+### Objective
+To minimize the last job end time.
+
+### Constraints
+The nonlinear model represents the problem using only the job order for the
+machines. This is sufficient to construct feasible, compact solutions. In
+seeking a minimum, the model uses Ocean's
+[dwave-optimization](https://docs.dwavequantum.com/en/latest/ocean/api_ref_optimization/index.html)
+package's ``ListVariable`` to efficiently permutate the order of jobs.
+
+Typically, solver performance strongly depends on the size of the solution space
+for the modeled problem: models with smaller spaces of feasible solutions tend
+to perform better than ones with larger spaces. A powerful way to reduce the
+feasible-solutions space is by using variables that act as implicit constraints,
+such as the ``ListVariable`` symbol used here, where the order of jobs is a
+permutation of values. The ``max`` operation is used to extract the start time
+for each job, making sure that there's no overlap between jobs on machines. No
+other constraints are necessary.
+
+As can be seen in the two examples below, switching the job order can
+improve the solution quality, corresponding to a shorter completion
+time (makespan).
+
+![fss_example0](_static/fss_example0.png)
+Above: a solution to a flow shop scheduling problem with 3 jobs on 3 machines.
+
+![fss_example1](_static/fss_example1.png)
+Above: an improved solution to the same problem with a permutated job order.
+
+## References
 <a id="Manne"></a>
 A. S. Manne, On the job-shop scheduling problem, Operations Research , 1960,
 Pages 219-223.

@@ -30,6 +30,7 @@ Apache License, Version 2.0
 
 """
 
+import argparse
 import pathlib
 import time
 from typing import NamedTuple
@@ -61,7 +62,6 @@ if multiprocess.get_start_method(allow_none=True) is None:
 from app_configs import (
     APP_TITLE,
     CLASSICAL_TAB_LABEL,
-    DEBUG,
     DWAVE_TAB_LABEL,
     SCENARIOS,
     SHOW_CQM,
@@ -82,6 +82,25 @@ app.title = APP_TITLE
 
 server = app.server
 app.config.suppress_callback_exceptions = True
+
+# Parse debug argument
+parser = argparse.ArgumentParser(description="Dash debug setting.")
+parser.add_argument(
+    "--debug",
+    action="store_true",
+    help="Add argument to see Dash debug menu and get live reload updates while developing.",
+)
+
+args = parser.parse_args()
+DEBUG = args.debug
+
+print(f"\nDebug has been set to: {DEBUG}")
+if not DEBUG:
+    print(
+        "The app will not show live code updates and the Dash debug menu will be hidden.",
+        "If editting code while the app is running, run the app with `python app.py --debug`.\n",
+        sep="\n",
+    )
 
 BASE_PATH = pathlib.Path(__file__).parent.resolve()
 DATA_PATH = BASE_PATH.joinpath("input").resolve()
