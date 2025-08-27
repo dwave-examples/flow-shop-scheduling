@@ -22,7 +22,7 @@ This example demonstrates three ways of formulating and optimizing FSS:
 
 *   Formulating a
     [nonlinear model](https://docs.dwavequantum.com/en/latest/concepts/models.html#nonlinear-model)
-    and solving on a Leap hybrid Nonlinear (NL) solver
+    and solving on a Leap&trade; hybrid nonlinear (NL) solver
 *   Formulating a
     [constrained quadratic model](https://docs.dwavequantum.com/en/latest/concepts/models.html#constrained-quadratic-model)
     (CQM) and solving on a Leap hybrid CQM solver
@@ -34,7 +34,7 @@ interface built with [Dash](https://dash.plotly.com/).
 
 ## Installation
 You can run this example without installation in cloud-based IDEs that support the
-[Development Containers specification](https://containers.dev/supporting) (aka "devcontainers")
+[Development Containers Specification](https://containers.dev/supporting) (aka "devcontainers")
 such as GitHub Codespaces.
 
 For development environments that do not support `devcontainers`, install requirements:
@@ -48,9 +48,9 @@ If you are cloning the repo to your local system, working in a
 
 ## Usage
 Your development environment should be configured to access the
-[Leap&trade; quantum cloud service](https://docs.ocean.dwavesys.com/en/stable/overview/sapi.html).
+[Leap quantum cloud service](https://docs.dwavequantum.com/en/latest/ocean/sapi_access_basic.html).
 You can see information about supported IDEs and authorizing access to your Leap account
-[here](https://docs.dwavesys.com/docs/latest/doc_leap_dev_env.html).
+[here](https://docs.dwavequantum.com/en/latest/ocean/leap_authorization.html).
 
 Run the following terminal command to start the Dash application:
 
@@ -60,8 +60,7 @@ python app.py
 
 Access the user interface with your browser at http://127.0.0.1:8050/.
 
-The demo program opens an interface where you can configure problems and submit these problems to
-a solver.
+The demo program opens an interface where you can configure and submit problems to a solver.
 
 Configuration options can be found in the [demo_configs.py](demo_configs.py) file.
 
@@ -90,7 +89,7 @@ The command line arguments are as follows:
   output/schedule.png)
 - -m (--use_scipy_solver): use SciPy's HiGHS solver instead of the CQM solver
   (default: True)
-- -m (--use_nl_solver): use the Nonlinear solver instead of the CQM solver
+- -m (--use_nl_solver): use the nonlinear solver instead of the CQM solver
   (default: False)
 - -v (--verbose): print verbose output (default: True)
 - -p (--profile): profile variable to pass to the sampler (default: None)
@@ -197,14 +196,14 @@ will be determined using a greedy heuristic. Placing an upper bound on the
 makespan improves the performance of the D-Wave sampler; however, if the upper
 bound is too low then the sampler may fail to find a feasible solution.
 
-## NL Model Overview
-The model for the Nonlinear solver is constructed using the
+## Nonlinear Model Overview
+The model for the nonlinear solver is constructed using the
 [flow shop scheduling generator](https://docs.dwavequantum.com/en/latest/ocean/api_ref_optimization/generators.html#dwave.optimization.generators.flow_shop_scheduling)
 provided in ``dwave-optimization``.
 
 ### Problem Parameters
 
-- `processing_times`: an mxn array where processing_times[m, n] is the duration of job n on
+- `processing_times`: an `mXn` array where processing_times[m, n] is the duration of job n on
 machine m.
 
 ### Variables
