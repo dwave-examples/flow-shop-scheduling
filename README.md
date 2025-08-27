@@ -13,6 +13,9 @@ is a constrained case of JSS where each job uses each machine in the same
 order. The machines in FSS problems can often be seen as sequential operations
 to be executed on each job, as is the case in this example.
 
+This is a basic example of flow show scheduling that can easily be extended to different
+objectives, such as minimizing the delay for the scheduled completion of each job.
+
 ![Demo Screenshot](_static/screenshot.png)
 
 This example demonstrates three ways of formulating and optimizing FSS:
@@ -108,19 +111,20 @@ used by Taillard.
 The goal of the flow shop scheduling problem is to complete all jobs as quickly as possible.
 The model sets the following objectives and constraints to achieve this goal:
 
-**Objectives**: minimize the total completion time (makespan).
+**Objectives:** minimize the total completion time (makespan).
 
-**CQM Constraints:**
+**Constraints:** the constraints for this problem fall into multiple categories.
 - **Precedence Constraint** ensure that all tasks of a job are executed in the given order.
 - **No-Overlap Constraints** ensure no two jobs can execute on the same machine at the same time.
 - **Makespan Constraint** (optional) all viable solutions must have a makespan under a certain
 threshold.
 
-**NL Constraints:**
-
-The nonlinear model has no need for explicit constraints as the ``ListVariable`` has inherent order
-and the ``max`` symbol ensures no overlap. Setting up the problem with implicit contraints
-significantly reduces the search space which in turn leads to better solutions.
+Constraints are handled differently in the CQM and NL model formulations. The CQM
+formulation must explicitly state each constraint and therefore searches a solution space
+including violations of these constraints. The nonlinear model has no need for explicit
+constraints as the structure of the model limits potential solutions to only those that adhere
+to the constraints. By using implicit constraints to limit the search space to only valid solutions,
+the NL solver is often able to find better solutions, faster.
 
 ## CQM Model Overview
 
@@ -144,10 +148,10 @@ significantly reduces the search space which in turn leads to better solutions.
 - `y_(j_k,i)`: binaries which define if job `k` precedes job `j` on machine `i`
 
 ### Objective
-The objective is to minimize the makespan (`w`) of the given FSS problem.
+To minimize the total completion time (makespan).
 
 ### Constraints
-The constrained quadratic model (CQM) requires adding a set of constraints to
+The constrained quadratic model (CQM) requires adding a set of explicit constraints to
 ensure that tasks are executed in order and that no single machine is used by
 different jobs at the same time.
 
@@ -210,22 +214,22 @@ machine m.
 To minimize the last job end time.
 
 ### Constraints
-The nonlinear model represents the problem using only the job order for the
-machines. This is sufficient to construct feasible, compact solutions. In
-seeking a minimum, the model uses Ocean's
+Typically, solver performance strongly depends on the size of the solution space for the modeled
+problem: models with smaller spaces of feasible solutions tend to perform better than ones with
+larger spaces. A powerful way to reduce the feasible solutions space is by using variables that
+act as implicit constraints. The NL solver has many variable types that allow for model construction
+to integrate constraints implicitly. In this problem example, both constraints are handled
+implicitly.
+
+#### Precedence Constraint
+The precedence constraint ensures that all tasks of a job are executed in the given order.
+
+This model uses the
 [dwave-optimization](https://docs.dwavequantum.com/en/latest/ocean/api_ref_optimization/index.html)
-package's ``ListVariable`` to efficiently permutate the order of jobs.
+ ``ListVariable`` to efficiently permutate the order of jobs which prevents violation of this
+ constraint, as the constraint is implicitly built into the model.
 
-Typically, solver performance strongly depends on the size of the solution space
-for the modeled problem: models with smaller spaces of feasible solutions tend
-to perform better than ones with larger spaces. A powerful way to reduce the
-feasible-solutions space is by using variables that act as implicit constraints,
-such as the ``ListVariable`` symbol used here, where the order of jobs is a
-permutation of values. The ``max`` operation is used to extract the start time
-for each job, making sure that there's no overlap between jobs on machines. No
-other constraints are necessary.
-
-As can be seen in the two examples below, switching the job order can
+As can be seen in the two images below, switching the job order can
 improve the solution quality, corresponding to a shorter completion
 time (makespan).
 
@@ -234,6 +238,13 @@ Above: a solution to a flow shop scheduling problem with 3 jobs on 3 machines.
 
 ![fss_example1](_static/fss_example1.png)
 Above: an improved solution to the same problem with a permutated job order.
+
+#### No-Overlap Constraints
+The no-overlap constraint ensures that no two jobs use the same machine at the same time.
+
+The ``max`` operation is used to extract the start time for each job, ensuring there is no overlap
+between jobs on machines. This constraint is built into the model and therefore, all solutions in
+the solution space adhere to it.
 
 ## References
 <a id="Manne"></a>
