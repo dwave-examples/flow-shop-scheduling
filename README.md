@@ -150,7 +150,7 @@ the NL solver is often able to find better solutions, faster.
 To minimize the total completion time (makespan).
 
 ### Constraints
-The constrained quadratic model (CQM) requires adding a set of explicit constraints to
+The CQM requires adding a set of explicit constraints to
 ensure that tasks are executed in order and that no single machine is used by
 different jobs at the same time.
 
@@ -203,7 +203,7 @@ provided in ``dwave-optimization``.
 
 ### Problem Parameters
 
-- `processing_times`: an `mXn` array where processing_times[m, n] is the duration of job n on
+- `processing_times`: an `mXn` array where `processing_times[m, n]` is the duration of job n on
 machine m.
 
 ### Variables
