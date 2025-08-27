@@ -115,8 +115,7 @@ The model sets the following objectives and constraints to achieve this goal:
 **Constraints:** the constraints for this problem fall into multiple categories.
 - **Precedence Constraint** ensure that all tasks of a job are executed in the given order.
 - **No-Overlap Constraints** ensure no two jobs can execute on the same machine at the same time.
-- **Makespan Constraint** (optional) all viable solutions must have a makespan under a certain
-threshold.
+- **Makespan Constraint** (optional) puts an upper bound on the time it takes to complete all jobs.
 
 Constraints are handled differently in the CQM and NL model formulations. The CQM
 formulation must explicitly state each constraint and therefore searches a solution space
