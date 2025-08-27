@@ -97,7 +97,7 @@ DEBUG = args.debug
 print(f"\nDebug has been set to: {DEBUG}")
 if not DEBUG:
     print(
-        "The app will not show live code updates and the Dash debug menu will be hidden.",
+        "Code changes will not be reflected in the app interface and the Dash debug menu will be hidden.",
         "If editing code while the app is running, run the app with `python app.py --debug`.\n",
         sep="\n",
     )

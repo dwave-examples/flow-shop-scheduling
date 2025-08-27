@@ -69,8 +69,8 @@ Configuration options can be found in the [demo_configs.py](demo_configs.py) fil
 with the `--debug` command-line argument for easier debugging:
 `python app.py --debug`
 
-Alternatively, to run the flow shop scheduler without the Dash interface, type the following into
-the terminal:
+Alternatively, you can run the flow shop scheduler without the Dash interface using the following
+command:
 
 ```bash
 python job_shop_scheduler.py [-h] [-i INSTANCE] [-tl TIME_LIMIT]
