@@ -193,7 +193,7 @@ There are two cases:
 #### Makespan Constraint
 In this demonstration, the maximum makespan can be defined by the user or it
 will be determined using a greedy heuristic. Placing an upper bound on the
-makespan improves the performance of the D-Wave sampler; however, if the upper
+makespan improves the performance of the sampler; however, if the upper
 bound is too low then the sampler may fail to find a feasible solution.
 
 ## Nonlinear Model Overview
@@ -214,11 +214,12 @@ To minimize the last job end time.
 
 ### Constraints
 Typically, solver performance strongly depends on the size of the solution space for the modeled
-problem: models with smaller spaces of feasible solutions tend to perform better than ones with
-larger spaces. A powerful way to reduce the feasible solutions space is by using variables that
-act as implicit constraints. The NL solver has many variable types that allow for model construction
-to integrate constraints implicitly. In this problem example, both constraints are handled
-implicitly.
+problem: models with a smaller solution space tend to perform better than ones with a larger space
+as there are less potential solutions to search through to find optimal. A powerful way to reduce
+the solution space is by using variables that act as implicit constraints. Implicit constraints
+limit the solution space to only solutions that adhere to the constraints. The NL solver has many
+variable types that allow for model construction to integrate constraints implicitly. In this
+problem example, both constraints are handled implicitly.
 
 #### Precedence Constraint
 The precedence constraint ensures that all tasks of a job are executed in the given order.
