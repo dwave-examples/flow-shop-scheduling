@@ -46,8 +46,8 @@ Access the user interface with your browser at http://127.0.0.1:8050/.
 To run the flow shop scheduler without the Dash interface, from the command line
 enter
 
-    python job_shop_scheduler.py [-h] [-i INSTANCE] [-tl TIME_LIMIT]
-    [-os OUTPUT_SOLUTION] [-op OUTPUT_PLOT] [-m] [-v] [-q] [-p PROFILE]
+    python flow_shop_scheduler.py [-h] [-i INSTANCE] [-tl TIME_LIMIT]
+    [-os OUTPUT_SOLUTION] [-op OUTPUT_PLOT] [-sp] [-cqm] [-v] [-q] [-p PROFILE]
     [-mm MAX_MAKESPAN]
 
 This calls the FSS algorithm for the input file. Command line arguments are as
@@ -60,9 +60,9 @@ follows:
   output/solution.txt)
 - -op (--output_plot): path to the output plot file (default:
   output/schedule.png)
-- -m (--use_scipy_solver): use SciPy's HiGHS solver instead of the CQM solver
-  (default: True)
-- -m (--use_nl_solver): use the nonlinear-model solver instead of the CQM solver
+- -sp (--use_scipy_solver): use SciPy's HiGHS solver instead of a hybrid solver
+  (default: False)
+- -cqm (--use_cqm_solver): use the CQM solver instead of the nonlinear-model solver
   (default: False)
 - -v (--verbose): print verbose output (default: True)
 - -p (--profile): profile variable to pass to the sampler (default: None)

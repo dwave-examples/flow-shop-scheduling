@@ -1,5 +1,5 @@
 """
-This file will greedily generate a solution for the job shop problem
+This file will greedily generate a solution for the flow shop problem
 """
 
 import sys
@@ -7,23 +7,23 @@ import sys
 import numpy as np
 
 sys.path.append("./src")
-from model_data import JobShopData
+from model_data import FlowShopData
 
 
 class GreedyJobShop:
 
-    def __init__(self, model_data: JobShopData):
+    def __init__(self, model_data: FlowShopData):
         """Initializes the GreedyJobShop class.
 
         Args:
-            model_data (JobShopData): A JobShopData object that holds
-                the data for this job shop
+            model_data (FlowShopData): A FlowShopData object that holds
+                the data for this flow shop
         """
         self.model_data = model_data
 
     def solve(self, skip_probability: float = 0.1, seed: int = 42) -> dict:
         """
-        This solves the job shop scheduling problem using the
+        This solves the flow shop scheduling problem using the
         following strategy:
         1. Randomly select a job with open tasks
         2. Select the first open task for that job

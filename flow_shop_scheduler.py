@@ -7,7 +7,6 @@ solve a Job Shop Scheduling problem using CQM.
 from __future__ import annotations
 
 import argparse
-import sys
 import warnings
 from enum import Enum
 
@@ -15,14 +14,13 @@ import pandas as pd
 from dimod import Binary, ConstrainedQuadraticModel, Integer
 from dwave.system import LeapHybridCQMSampler, LeapHybridNLSampler
 
-sys.path.append("./src")
 from dwave.optimization.generators import flow_shop_scheduling
 
-import utils.plot_schedule as job_plotter
-import utils.scipy_solver as scipy_solver
-from model_data import JobShopData
-from utils.greedy import GreedyJobShop
-from utils.utils import print_cqm_stats, write_solution_to_file
+import src.utils.plot_schedule as job_plotter
+import src.utils.scipy_solver as scipy_solver
+from src.model_data import FlowShopData
+from src.utils.greedy import GreedyJobShop
+from src.utils.utils import print_cqm_stats, write_solution_to_file
 
 
 class SamplerType(Enum):
@@ -35,12 +33,12 @@ class HybridSamplerType(Enum):
     CQM = 1
 
 
-def generate_greedy_makespan(job_data: JobShopData, num_samples: int = 100) -> int:
+def generate_greedy_makespan(job_data: FlowShopData, num_samples: int = 100) -> int:
     """This function generates random samples using the greedy algorithm; it will keep the
     top keep_pct percent of samples.
 
     Args:
-        job_data (JobShopData): An instance of the JobShopData class
+        job_data (FlowShopData): An instance of the FlowShopData class
         num_samples (int, optional): The number of samples to take (number of times
             the GreedyJobShop algorithm is run). Defaults to 100.
 
@@ -61,7 +59,7 @@ class JobShopSchedulingModel:
     """Builds and solves a Job Shop Scheduling problem using CQM or the NL Solver.
 
     Args:
-        model_data (JobShopData): The data for the job shop scheduling
+        model_data (FlowShopData): The data for the flow shop scheduling
         max_makespan (int, optional): The maximum makespan allowed for the schedule.
             If None, the makespan will be set to a value that is greedy_mulitiplier
             times the makespan found by the greedy algorithm. Defaults to None.
@@ -69,7 +67,7 @@ class JobShopSchedulingModel:
             to get the upperbound on the makespan. Defaults to 1.4.
 
     Attributes:
-        model_data (JobShopData): The data for the job shop scheduling
+        model_data (FlowShopData): The data for the flow shop scheduling
         cqm (ConstrainedQuadraticModel): The CQM model
         nl_model (nlsolver.Model): The NL Solver model
         solution (dict): The solution to the problem
@@ -79,7 +77,7 @@ class JobShopSchedulingModel:
     """
 
     def __init__(
-        self, model_data: JobShopData, max_makespan: int = None, greedy_multiplier: float = 1.4
+        self, model_data: FlowShopData, max_makespan: int = None, greedy_multiplier: float = 1.4
     ):
         self.model_data = model_data
         self.cqm = None
@@ -359,10 +357,10 @@ class JobShopSchedulingModel:
 
 
 def run_shop_scheduler(
-    job_data: JobShopData,
+    job_data: FlowShopData,
     solver_time_limit: int = 60,
     use_scipy_solver: bool = False,
-    use_nl_solver: bool = False,
+    use_cqm_solver: bool = False,
     verbose: bool = False,
     out_sol_file: str = None,
     out_plot_file: str = None,
@@ -370,17 +368,17 @@ def run_shop_scheduler(
     max_makespan: int = None,
     greedy_multiplier: float = 1.4,
 ) -> pd.DataFrame:
-    """This function runs the job shop scheduler on the given data.
+    """This function runs the flow shop scheduler on the given data.
 
     Args:
-        job_data (JobShopData): A JobShopData object that holds the data for this job shop
+        job_data (FlowShopData): A FlowShopData object that holds the data for this flow shop
             scheduling problem.
         solver_time_limit (int, optional): Upperbound on how long the schedule can be; leave empty to
             auto-calculate an appropriate value. Defaults to None.
         use_scipy_solver (bool, optional): Whether to use the HiGHS via SciPy solver instead of the CQM solver.
-            Overridden by ``use_nl_solver`` if both are True. Defaults to False.
-        use_nl_solver (bool, optional): Whether to use the HiGHS via SciPy solver instead of the CQM solver.
-            Overrides the ``use_scipy_solver`` argument when both are True. Defaults to False.
+            Overrides the ``use_cqm_solver`` if both are True. Defaults to False.
+        use_cqm_solver (bool, optional): Whether to use the CQM solver instead of the NL or SciPy solver.
+            Overridden by ``use_scipy_solver`` argument when both are True. Defaults to False.
         verbose (bool, optional): Whether to print verbose output. Defaults to False.
         out_sol_file (str, optional): Path to the output solution file. Defaults to None.
         out_plot_file (str, optional): Path to the output plot file. Defaults to None.
@@ -399,13 +397,8 @@ def run_shop_scheduler(
         model_data=job_data, max_makespan=max_makespan, greedy_multiplier=greedy_multiplier
     )
 
-    if verbose:
-        print_cqm_stats(model.cqm)
-
-    if use_nl_solver:
-        model.create_nl_model()
-        model.call_nl_solver(time_limit=solver_time_limit)
-    else:
+    if use_cqm_solver or use_scipy_solver:
+        print("Creating a CQM model")
         model.define_cqm_model()
         model.define_cqm_variables()
 
@@ -415,10 +408,20 @@ def run_shop_scheduler(
 
         model.define_cqm_objective()
 
+        if verbose:
+            print_cqm_stats(model.cqm)
+
         if use_scipy_solver:
+            print("Solving using SciPy")
             model.call_scipy_solver(time_limit=solver_time_limit)
         else:
+            print("Solving using the CQM solver")
             model.call_cqm_solver(time_limit=solver_time_limit, profile=profile)
+    else:
+        print("Creating an NL model")
+        model.create_nl_model()
+        print("Solving using the NL solver")
+        model.call_nl_solver(time_limit=solver_time_limit)
 
     # Write solution to a file.
     if out_sol_file is not None:
@@ -468,17 +471,17 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "-m",
+        "-sp",
         "--use_scipy_solver",
         action="store_true",
         help="Whether to use the HiGHS solver instead of the hybrid solver",
     )
 
     parser.add_argument(
-        "-m",
-        "--use_nl_solver",
-        action="store_false",
-        help="Whether to use the NL solver instead of the CQM solver",
+        "-cqm",
+        "--use_cqm_solver",
+        action="store_true",
+        help="Whether to use the CQM solver instead of the NL or SciPy solver",
     )
 
     parser.add_argument(
@@ -510,10 +513,10 @@ if __name__ == "__main__":
     max_makespan = args.max_makespan
     profile = args.profile
     use_scipy_solver = args.use_scipy_solver
-    use_nl_solver = args.use_nl_solver
+    use_cqm_solver = args.use_cqm_solver
     verbose = args.verbose
 
-    job_data = JobShopData()
+    job_data = FlowShopData()
     job_data.load_from_file(input_file)
 
     results = run_shop_scheduler(
@@ -521,7 +524,7 @@ if __name__ == "__main__":
         time_limit,
         verbose=verbose,
         use_scipy_solver=use_scipy_solver,
-        use_nl_solver=use_nl_solver,
+        use_cqm_solver=use_cqm_solver,
         profile=profile,
         max_makespan=max_makespan,
         out_sol_file=out_sol_file,

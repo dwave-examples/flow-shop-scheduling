@@ -45,7 +45,7 @@ from app_configs import (
     THEME_COLOR_SECONDARY,
     THUMBNAIL,
 )
-from src.job_shop_scheduler import HybridSamplerType, SamplerType
+from flow_shop_scheduler import HybridSamplerType, SamplerType
 
 SAMPLER_TYPES = {
     SamplerType.HYBRID: "Quantum Hybrid" if SHOW_CQM else "Quantum Hybrid (NL)",

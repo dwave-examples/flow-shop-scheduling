@@ -1,20 +1,18 @@
 from __future__ import annotations
 
-import sys
 from collections.abc import Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING, Union
 
-sys.path.append("./src")
 from app_configs import RESOURCE_NAMES
-from utils.utils import read_or_library_instance, read_taillard_instance
+from src.utils.utils import read_or_library_instance, read_taillard_instance
 
 if TYPE_CHECKING:
     from numpy.typing import array_like
 
 
 class Task:
-    """This class represents a task in a job shop scheduling problem.
+    """This class represents a task in a flow shop scheduling problem.
 
     Attributes:
         job (str): the name of the job requiring the task
@@ -23,7 +21,7 @@ class Task:
     """
 
     def __init__(self, job: str, resource: str, duration: int):
-        """Initializes a task in a job shop scheduling problem.
+        """Initializes a task in a flow shop scheduling problem.
 
         Args:
             job (str): the name of the job requiring the task
@@ -40,11 +38,11 @@ class Task:
         )
 
 
-class JobShopData:
-    """This class holds and manages the data for a job shop scheduling problem."""
+class FlowShopData:
+    """This class holds and manages the data for a flow shop scheduling problem."""
 
     def __init__(self, jobs: Iterable[str] = [], resources: Iterable[str] = []):
-        """Initializes the data for a job shop scheduling problem.
+        """Initializes the data for a flow shop scheduling problem.
 
         Args:
             jobs (Iterable[str]): The jobs to be scheduled.

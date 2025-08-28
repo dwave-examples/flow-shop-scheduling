@@ -8,8 +8,8 @@ from dimod import BINARY, INTEGER, sym
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append("../")
 import src.utils.plot_schedule as job_plotter
-from src.job_shop_scheduler import JobShopSchedulingModel
-from src.model_data import JobShopData
+from flow_shop_scheduler import JobShopSchedulingModel
+from src.model_data import FlowShopData
 
 project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -20,7 +20,7 @@ class TestSmoke(unittest.TestCase):
     def test_smoke(self):
         """Run job_shop_scheduler.py and check that nothing crashes"""
 
-        demo_file = os.path.join(project_dir, "src", "job_shop_scheduler.py")
+        demo_file = os.path.join(project_dir, "flow_shop_scheduler.py")
         subprocess.check_output([sys.executable, demo_file])
 
 
@@ -30,7 +30,7 @@ class TestData(unittest.TestCase):
         """Test input data name, size and max completion time"""
 
         input_file = "tests/instance_test.txt"
-        test_model_data = JobShopData()
+        test_model_data = FlowShopData()
         test_model_data.load_from_file(input_file)
 
         self.assertEqual(len(test_model_data.jobs), 3)
@@ -41,7 +41,7 @@ class TestData(unittest.TestCase):
         """Test if data is formatted correctly for plotting"""
 
         input_file = "tests/instance_test.txt"
-        test_data = JobShopData()
+        test_data = FlowShopData()
         test_data.load_from_file(input_file)
 
         solution = {
@@ -67,7 +67,7 @@ class TestData(unittest.TestCase):
         "Testing size of CQM model built for an JSS instance" ""
 
         input_file = "tests/instance_test.txt"
-        model_data = JobShopData()
+        model_data = FlowShopData()
         model_data.load_from_file(input_file)
         model = JobShopSchedulingModel(model_data)
         model.define_cqm_model()
