@@ -6,3 +6,5 @@ build
 dist
 *.egg-info
 assets/theme.css
+*.DS_Store
+output/
