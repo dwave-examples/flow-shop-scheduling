@@ -96,15 +96,19 @@ The command line arguments are as follows:
 - -mm (--max_makespan): manually set an upper bound on the schedule length
   instead of auto-calculating (default: None)
 
-### Problem Instances
-Several problem instances are available in the `input` folder. Some of
-these instances are contained within the `flowshop1.txt` file, retrieved from
-the [OR-Library], and parsed when the demo is initialized. These can be accessed
-as if they were files in the `input` folder, named according to the instance
-short names in `flowshop1.txt` (e.g., "car2", "reC13"), without filename
-endings. Other instances were pulled from [E. Taillard's list] of benchmarking
-instances. If the string "tai" is in the filename, the model expects the format
-used by Taillard.
+### Input Data
+Several problem instances are available in the `input` folder. These instances fall into two
+categories:
+- [OR-Library] problem instances are contained within the `flowshop1.txt` file. These can be used by
+referencing the short name (e.g., "car2", "reC13") in the `app_configs.py` file under `SCENARIOS`.
+- [E. Taillard's list] of benchmarking instances are separated into one file per instance. If the
+file name starts with "tai", the model expects the format used by Taillard. These can be accessed by
+referencing the full file name (e.g., "tai20_5.txt", "tai20_20.txt") in the `app_configs.py` file
+under `SCENARIOS`.
+
+These datasets are processed differently so consider following one of these two file structures when
+adding new data or update the `load_from_file` function in `model_data.py` to support new file
+structures.
 
 ## Problem Description
 The goal of the flow shop scheduling problem is to complete all jobs as quickly as possible.
