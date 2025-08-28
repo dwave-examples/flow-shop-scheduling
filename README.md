@@ -119,10 +119,11 @@ The model sets the following objectives and constraints to achieve this goal:
 
 Constraints are handled differently in the CQM and NL model formulations. The CQM
 formulation must explicitly state each constraint and therefore searches a solution space
-including violations of these constraints. The nonlinear model has no need for explicit
-constraints as the structure of the model limits potential solutions to only those that adhere
-to the constraints. By using implicit constraints to limit the search space to only valid solutions,
-the NL solver is often able to find better solutions, faster.
+that includes variable assignments that are infeasible (constraints are violated). The nonlinear
+model has no need for explicit constraints as the structure of the model limits potential
+solutions to only those that adhere to the constraints. By using implicit constraints to limit
+the search space to only valid solutions, the NL solver is often able to find better solutions,
+faster.
 
 ## CQM Model Overview
 
@@ -136,7 +137,7 @@ the NL solver is often able to find better solutions, faster.
 - `M_(j,t)`:  the machine that processes task `t` of job `j`
 - `T_(j,i)`: the task that is processed by machine `i` for job `j`
 - `D_(j,t)`:  the processing duration that task `t` needs for job `j`
-- `V`:  maximum possible makespan
+- `V`:  maximum allowed makespan
 
 ### Variables
 - `w`: a positive integer variable that defines the completion time (makespan)
