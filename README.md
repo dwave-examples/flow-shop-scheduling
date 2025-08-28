@@ -110,6 +110,14 @@ These datasets are processed differently so consider following one of these two 
 adding new data or update the `load_from_file` function in `model_data.py` to support new file
 structures.
 
+### Output
+Command line runs will, by default, output a text and image file to an `output` directory. The image
+file will contain a plot of the solution and the text file will contain a table of the solution with
+columns specifying job id, task, start, dur, task, start, dur, etc.
+
+Dash interface runs will return results as a DataFrame that will be displayed as a Plotly figure in
+the user interface.
+
 ## Problem Description
 The goal of the flow shop scheduling problem is to complete all jobs as quickly as possible.
 The model sets the following objectives and constraints to achieve this goal:
