@@ -215,11 +215,11 @@ To minimize the last job end time.
 ### Constraints
 Typically, solver performance strongly depends on the size of the solution space for the modeled
 problem: models with a smaller solution space tend to perform better than ones with a larger space
-as there are less potential solutions to search through to find optimal. A powerful way to reduce
-the solution space is by using variables that act as implicit constraints. Implicit constraints
-limit the solution space to only solutions that adhere to the constraints. The NL solver has many
-variable types that allow for model construction to integrate constraints implicitly. In this
-problem example, both constraints are handled implicitly.
+as there are less potential solutions to search through to find optimality. A powerful way to reduce
+the solution space is by using variables that act as implicit constraints. Such a variable
+reduces the solution space to solutions that adhere to its implicit constraints. The NL solver
+has many variable types that allow for model construction to integrate constraints implicitly.
+In this problem example, both constraints are handled implicitly.
 
 #### Precedence Constraint
 The precedence constraint ensures that all tasks of a job are executed in the given order.
