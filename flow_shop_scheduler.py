@@ -225,7 +225,11 @@ class JobShopSchedulingModel:
         min_time_limit = sampler.min_time_limit(self.cqm)
         if time_limit is not None:
             time_limit = max(min_time_limit, time_limit)
-        raw_sampleset = sampler.sample_cqm(self.cqm, time_limit=time_limit, label="Job Shop Demo")
+        raw_sampleset = sampler.sample_cqm(
+            self.cqm,
+            time_limit=time_limit,
+            label="Examples - Flow Shop Scheduling"
+        )
         feasible_sampleset = raw_sampleset.filter(lambda d: d.is_feasible)
         num_feasible = len(feasible_sampleset)
         if num_feasible > 0:
@@ -306,7 +310,11 @@ class JobShopSchedulingModel:
             self.solution: the solution to the problem
         """
         sampler = LeapHybridNLSampler()
-        sampler.sample(self.nl_model, time_limit=time_limit, label="FSS demo")
+        sampler.sample(
+            self.nl_model,
+            time_limit=time_limit,
+            label="Examples - Flow Shop Scheduling"
+        )
 
         end_times = self._calculate_end_times()
 
