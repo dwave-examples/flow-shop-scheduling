@@ -16,11 +16,6 @@
 
 import json
 
-# Sets Dash debug which hides and shows Dash debug menu.
-# Set to True if developing and False if demoing.
-# App should be restarted to see change.
-DEBUG = False
-
 # THEME_COLOR is used for the button, text, and banner and should be dark
 # and pass accessibility checks with white: https://webaim.org/resources/contrastchecker/
 # THEME_COLOR_SECONDARY can be light or dark and is used for sliders, loading icon, and tabs
