@@ -383,9 +383,9 @@ def run_shop_scheduler(
             scheduling problem.
         solver_time_limit (int, optional): Upperbound on how long the schedule can be; leave empty to
             auto-calculate an appropriate value. Defaults to None.
-        use_scipy_solver (bool, optional): Whether to use the HiGHS via SciPy solver instead of the CQM solver.
-            Overrides the ``use_cqm_solver`` if both are True. Defaults to False.
-        use_cqm_solver (bool, optional): Whether to use the CQM solver instead of the NL or SciPy solver.
+        use_scipy_solver (bool, optional): Whether to use the HiGHS via SciPy solver instead of a
+            hybrid solver. Overrides the ``use_cqm_solver`` if both are True. Defaults to False.
+        use_cqm_solver (bool, optional): Whether to use the CQM solver instead of the NL solver.
             Overridden by ``use_scipy_solver`` argument when both are True. Defaults to False.
         verbose (bool, optional): Whether to print verbose output. Defaults to False.
         out_sol_file (str, optional): Path to the output solution file. Defaults to None.
