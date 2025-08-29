@@ -132,8 +132,7 @@ def write_solution_to_file(
         for i in model_data.resources:
             job_sol[j].extend(list(solution[j, i]))
 
-    dir_path = "/".join(solution_file_path.split("/")[:-1])
-    Path(dir_path).mkdir(parents=True, exist_ok=True)
+    Path(solution_file_path).parent.mkdir(parents=True, exist_ok=True)
 
     with open(solution_file_path, "w") as f:
         f.write("#Number of jobs: " + str(model_data.get_job_count()) + "\n")
