@@ -60,7 +60,7 @@ follows:
   output/solution.txt)
 - -op (--output_plot): path to the output plot file (default:
   output/schedule.png)
-- -sp (--use_scipy_solver): use SciPy's HiGHS solver instead of a hybrid solver
+- -sp (--use_scipy_solver): use SciPy's HiGHS solver instead of a hybrid solver, overrides -cqm
   (default: False)
 - -cqm (--use_cqm_solver): use the CQM solver instead of the nonlinear-model solver
   (default: False)
