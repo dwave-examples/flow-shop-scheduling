@@ -2,12 +2,9 @@
 This file will greedily generate a solution for the flow shop problem
 """
 
-import sys
-
 import numpy as np
 
-sys.path.append("./src")
-from model_data import FlowShopData
+from src.model_data import FlowShopData
 
 
 class GreedyJobShop:
