@@ -76,7 +76,7 @@ def read_instance(instance_path: str) -> dict:
     """A method that reads input instance file
 
     Args:
-        instance_path:  path to the job shop instance file
+        instance_path:  path to the flow shop instance file
 
     Returns:
         Job_dict: dictionary containing jobs as keys and a list of tuple of
@@ -132,6 +132,8 @@ def write_solution_to_file(
         for i in model_data.resources:
             job_sol[j].extend(list(solution[j, i]))
 
+    Path(solution_file_path).parent.mkdir(parents=True, exist_ok=True)
+
     with open(solution_file_path, "w") as f:
         f.write("#Number of jobs: " + str(model_data.get_job_count()) + "\n")
         f.write("#Number of machines: " + str(model_data.get_resource_count()) + "\n")
@@ -150,7 +152,7 @@ def read_taillard_instance(instance_path: Union[Path, str]) -> array_like:
     """Reads input instance file from the taillard dataset
 
     Args:
-        instance_path:  path to the job shop instance file
+        instance_path:  path to the flow shop instance file
 
     Returns:
         array_like: array containing the processing times
@@ -205,7 +207,7 @@ def load_or_library_instances(instance_path: Union[Path, str]) -> list[dict]:
     """Read the OR library formatted Flow Shop Schedule problems file.
 
     Args:
-        instance_path: path to the job shop instance file
+        instance_path: path to the flow shop instance file
 
     Returns:
         list[dict]: list containing the processing times as values and labels as keys

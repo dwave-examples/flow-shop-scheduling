@@ -21,26 +21,26 @@ from dash import DiskcacheManager
 cache = diskcache.Cache("./cache")
 background_callback_manager = DiskcacheManager(cache)
 
-from src.model_data import JobShopData
+from src.model_data import FlowShopData
 
 Y_AXIS_LABEL = "Job"
 COLOR_LABEL = "Operation"  # must be operation label
 
 
-def get_minimum_task_times(job_shop_data: JobShopData) -> pd.DataFrame:
-    """Takes a JobShopData object, gets the minimum time each
+def get_minimum_task_times(flow_shop_data: FlowShopData) -> pd.DataFrame:
+    """Takes a FlowShopData object, gets the minimum time each
     task can be completed by, and generates the Jobs to Be Scheduled
     Gantt chart.
 
     Args:
-        job_shop_data (JobShopData): The data for the job shop scheduling problem.
+        flow_shop_data (FlowShopData): The data for the flow shop scheduling problem.
 
     Returns:
         pd.DataFrame: A DataFrame of the jobs to be scheduled including Task, Start, Finish,
         Operation, and delta.
     """
     task_data = []
-    for tasks in job_shop_data.job_tasks.values():
+    for tasks in flow_shop_data.job_tasks.values():
         start_time = 0
         for task in tasks:
             end_time = start_time + task.duration

@@ -69,8 +69,8 @@ from app_configs import (
     THEME_COLOR_SECONDARY,
 )
 from src.generate_charts import generate_gantt_chart, get_empty_figure, get_minimum_task_times
-from src.job_shop_scheduler import HybridSamplerType, SamplerType, run_shop_scheduler
-from src.model_data import JobShopData
+from flow_shop_scheduler import HybridSamplerType, SamplerType, run_shop_scheduler
+from src.model_data import FlowShopData
 
 app = dash.Dash(
     __name__,
@@ -367,17 +367,17 @@ def run_optimization_hybrid(
         )
 
     start = time.perf_counter()
-    model_data = JobShopData()
+    model_data = FlowShopData()
     filename = SCENARIOS[scenario]
 
     model_data.load_from_file(DATA_PATH.joinpath(filename))
 
-    running_nl = not SHOW_CQM or hybrid_solver is HybridSamplerType.NL.value
+    running_cqm = hybrid_solver is HybridSamplerType.CQM.value
 
     results = run_shop_scheduler(
         model_data,
         use_scipy_solver=False,
-        use_nl_solver=running_nl,
+        use_cqm_solver=running_cqm,
         solver_time_limit=time_limit,
     )
 
@@ -386,7 +386,7 @@ def run_optimization_hybrid(
 
     solution_stats_table = generate_problem_details_table(
         scenario,
-        "NL Solver" if running_nl else "CQM Solver",
+        "CQM Solver" if running_cqm else "NL Solver",
         model_data.get_job_count(),
         time_limit,
         model_data.get_resource_count(),
@@ -399,7 +399,7 @@ def run_optimization_hybrid(
         dwave_makespan=f"Makespan: {int(results['Finish'].max())}",
         dwave_solution_stats_table=solution_stats_table,
         dwave_tab_disabled=False,
-        dwave_gantt_title_span=" (NL)" if running_nl else " (CQM)",
+        dwave_gantt_title_span=" (CQM)" if running_cqm else " (NL)",
         dwave_tab_class="tab-success",
         dwave_tab_label=DWAVE_TAB_LABEL,
         running_dwave=False,
@@ -476,7 +476,7 @@ def run_optimization_scipy(
         )
 
     start = time.perf_counter()
-    model_data = JobShopData()
+    model_data = FlowShopData()
     filename = SCENARIOS[scenario]
 
     model_data.load_from_file(DATA_PATH.joinpath(filename))
@@ -543,7 +543,7 @@ def generate_unscheduled_gantt_chart(scenario: str) -> go.Figure:
     Returns:
         go.Figure: A Plotly figure object with the input data
     """
-    model_data = JobShopData()
+    model_data = FlowShopData()
 
     model_data.load_from_file(DATA_PATH.joinpath(SCENARIOS[scenario]))
     df = get_minimum_task_times(model_data)

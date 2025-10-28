@@ -62,7 +62,7 @@ def read_solution(path: str) -> tuple:
 
 
 def plot_schedule_core(job_start_time: dict, processing_time: dict, location) -> None:
-    """This function plots job shop problem
+    """This function plots flow shop problem
     Args:
         job_start_time: start time of each job on each machine
         processing_time: processing duration of each job on each machine

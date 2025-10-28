@@ -9,7 +9,7 @@ from tabulate import tabulate
 def generate_random_jss(
     n_jobs: int, n_machine: int, max_operation_time: int, location: str
 ) -> None:
-    """Generate random job shop problems
+    """Generate random flow shop problems
 
     Args:
         n_jobs: number of jobs
