@@ -23,7 +23,6 @@ from __future__ import annotations
 
 import argparse
 import warnings
-from enum import Enum
 
 import pandas as pd
 from dimod import Binary, ConstrainedQuadraticModel, Integer
@@ -36,16 +35,6 @@ import src.utils.scipy_solver as scipy_solver
 from src.model_data import FlowShopData
 from src.utils.greedy import GreedyJobShop
 from src.utils.utils import print_cqm_stats, write_solution_to_file
-
-
-class SamplerType(Enum):
-    HYBRID = 0
-    HIGHS = 1
-
-
-class HybridSamplerType(Enum):
-    NL = 0
-    CQM = 1
 
 
 def generate_greedy_makespan(job_data: FlowShopData, num_samples: int = 100) -> int:

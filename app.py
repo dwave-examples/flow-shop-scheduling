@@ -22,6 +22,7 @@ from dash import DiskcacheManager
 
 from demo_configs import APP_TITLE
 from demo_interface import create_interface
+import dash_mantine_components as dmc
 
 # Essential for initializing callbacks. Do not remove.
 import demo_callbacks
@@ -95,7 +96,7 @@ if not DEBUG:
 if __name__ == "__main__":
     # Imports the Dash HTML code and sets it in the app.
     # Creates the visual layout and app (see `demo_interface.py`)
-    app.layout = create_interface()
+    app.layout = dmc.MantineProvider(create_interface())
 
     # Run the server
     app.run(debug=DEBUG)

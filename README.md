@@ -16,7 +16,7 @@ to be executed on each job, as is the case in this example.
 This is a basic example of flow show scheduling that can easily be extended to different
 objectives, such as minimizing the delay for the scheduled completion of each job.
 
-![Demo Screenshot](_static/screenshot.png)
+![Demo Screenshot](static/screenshot.png)
 
 This example demonstrates three ways of formulating and optimizing FSS:
 
@@ -170,7 +170,7 @@ different jobs at the same time.
 Our first constraint, [equation 1](#eq2), enforces the precedence constraint.
 This ensures that all tasks of a job are executed in the given order.
 
-![equation1](_static/eq1.png)          (1)
+![equation1](static/eq1.png)          (1)
 
 This constraint ensures that a task for a given job, `j`, on a machine,
 `M_(j,t)`, starts when the previous task is finished. As an example, for
@@ -181,7 +181,7 @@ assuming that task 4 takes 12 hours to finish, we add this constraint:
 #### No-Overlap Constraints
 Our second constraint, [equation 2](#eq2), ensures that multiple jobs don't use
 any machine at the same time.
-![eq2](_static/eq2.png)          (2)
+![eq2](static/eq2.png)          (2)
 
 Usually this constraint is modeled as two disjunctive linear constraints
 ([Ku et al. 2016](#Ku) and [Manne et al. 1960](#Manne)); however, it is more
@@ -196,9 +196,9 @@ constraints:
 There are two cases:
 
 - if `y_j,k,i = 0` job `j` is processed after job `k`:
-  ![equation2_1](_static/eq2_1.png)
+  ![equation2_1](static/eq2_1.png)
 - if `y_j,k,i = 1` job `k` is processed after job `j`:
-  ![equation2_2](_static/eq2_2.png)
+  ![equation2_2](static/eq2_2.png)
   Since these equations are applied to every pair of jobs, they guarantee that
   the jobs don't overlap on a machine.
 
@@ -245,10 +245,10 @@ As can be seen in the two images below, switching the job order can
 improve the solution quality, corresponding to a shorter completion
 time (makespan).
 
-![fss_example0](_static/fss_example0.png)
+![fss_example0](static/fss_example0.png)
 Above: a solution to a flow shop scheduling problem with 3 jobs on 3 machines.
 
-![fss_example1](_static/fss_example1.png)
+![fss_example1](static/fss_example1.png)
 Above: an improved solution to the same problem with a permutated job order.
 
 #### No-Overlap Constraints

@@ -1,123 +1,21 @@
 /*
-This file is forked from apps/dash-clinical-analytics/assets/clinical-analytics.css under the following license
+Copyright 2024 D-Wave
 
-MIT License
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-Copyright (c) 2019 Plotly
+    http://www.apache.org/licenses/LICENSE-2.0
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-Modifications are licensed under
-
-Apache License, Version 2.0
-(see ./LICENSE for details)
-
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
 
-
-/* theme.css is automatically generated, see app.py for more details */
-@import url("theme.css");
-
-:root {
-    --blue-bright: #03B8FF;
-    --blue-light: #2A7DE1;
-    --blue-dark: #074C91;
-    --red-light: #C70039;
-    --red-dark: #900C3F;
-    --orange: #FF7006;
-    --teal-light: #06ECDC;
-    --teal-dark: #17BEBB;
-    --teal-darker: #008C82;
-    --grey-lighter: #EEEEEE;
-    --grey-light: #DDDDDD;
-    --grey: #AAAAAA;
-    --grey-medium: #777777;
-    --grey-dark: #222222;
-    --banner-height: 5.5rem;
-    --left-col-width: 35rem;
-    --problem-details-height: 11rem;
-}
-
-body {
-    background-color: #f9f9f9;
-    color: var(--grey-dark);
-    font-size: 1.4rem;
-    margin: 0;
-}
-
-.display-none {
-    display: none;
-}
-
-#banner {
-    flex: 0 0 var(--banner-height);
-    background-color: var(--theme);
-
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-}
-
-#banner img {
-    position: relative;
-    height: 3rem;
-    width: auto;
-    margin-left: 2rem;
-}
-
-h1, h2, h3, h4, h5, h6, td, th, span, a, p, label {
-    font-family: "Helvetica Neue", sans-serif;
-}
-
-h1, h2, h3, h4, h5, h6 {
-    color: var(--theme);
-    font-weight: 400;
-}
-
-h1 {
-    font-size: 3rem;
-    margin-top: 3rem;
-}
-
-h3 {
-    font-size: 2.4rem;
-    margin: 2.5rem 0 1rem;
-}
-
-h3.gantt-title {
+.gantt-title {
     margin-bottom: 0;
-}
-
-h4 {
-    font-size: 2rem;
-    margin-top: 2rem;
-    font-weight: 500;
-}
-
-h5 {
-    font-size: 1.8rem;
-    font-weight: 500;
-}
-
-label {
-    margin: 2rem 0 0.2rem;
-    font-weight: 500;
 }
 
 #solver-select label {
@@ -128,70 +26,6 @@ label {
 
 #solver-select.hide-cqm label:first-child {
     display: none !important;
-}
-
-input[type="checkbox"] {
-    margin: 0 1rem 0 0;
-}
-
-td {
-    color: var(--grey-dark);
-    background-color: white;
-}
-
-th, td {
-    padding: 0.5rem 1rem;
-    text-align: right;
-}
-
-th:first-child, td:first-child {
-    padding-left: 1.2rem;
-}
-
-th:last-child, td:last-child {
-    padding-right: 1.2rem;
-}
-
-#app-container {
-    min-width: 1000px;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
-
-#columns {
-    display: flex;
-    flex: 1;
-}
-
-.left-column {
-    display: flex;
-}
-
-.left-column > div > div {
-    padding: 0 2rem;
-    width: calc(var(--left-col-width) - 4rem);
-}
-
-.left-column > div:first-child {
-    width: var(--left-col-width);
-    transition: width 0.6s ease-in-out;
-    overflow: hidden;
-}
-
-.left-column.collapsed > div:first-child {
-    width: 0;
-}
-
-#right-column {
-    background-color: var(--grey-light);
-    padding: 2rem 0 0;
-    width: 100%;
-}
-
-div.dash-sk-circle {
-    height: 6rem;
-    width: 6rem;
 }
 
 .wait_time_graph > div, .patient_score_graph > div {
@@ -218,6 +52,7 @@ div.dash-sk-circle {
     height: 100%;
     display: flex;
     flex-direction: column;
+    padding: 2rem;
 }
 
 .graph-wrapper,
@@ -232,107 +67,6 @@ div.dash-sk-circle {
     align-items: end;
     margin-right: 20rem;
     margin-left: 4.3rem;
-}
-
-.tab-container {
-    border-bottom: 3px solid var(--theme-secondary);
-    flex-direction: row !important;
-}
-
-.tab {
-    margin: 0 2rem;
-    border-top-left-radius: 0.6rem;
-    border-top-right-radius: 0.6rem;
-    width: calc(100% / 2) !important;
-}
-
-div.tab.tab--selected {
-    border: 3px solid var(--theme-secondary) !important;
-    border-bottom: none !important;
-    cursor: default !important;
-    box-shadow: 0 6px 0 -3px white;
-}
-
-div.tab.tab--disabled {
-    cursor: not-allowed !important;
-}
-
-.tab:first-child {
-    margin-right: 1rem;
-}
-
-.tab:last-child {
-    margin-left: 1rem;
-}
-
-.tab-content,
-.tab-parent {
-    height: 100%;
-}
-
-.tab-content {
-    background-color: white;
-    padding: 0 1.5rem 3rem;
-}
-
-.left-column-collapse,
-.left-column-collapse:hover,
-.left-column-collapse:focus {
-    background: white;
-    border: 1px var(--grey-lighter);
-    border-style: none solid none none;
-    height: 100%;
-    border-radius: 0;
-    padding: 0 0 0 0.5rem;
-}
-
-.VirtualizedSelectFocusedOption {
-    background-color: var(--grey-lighter);
-}
-
-.is-focused:not(.is-open)>.Select-control {
-    border-color: var(--theme-secondary);
-    box-shadow: none;
-}
-
-#run-button,
-#cancel-button,
-.gantt-heading-button {
-    width: 100%;
-    font-size: 1.4rem;
-    line-height: 1.4rem;
-    padding: 1.8rem;
-    height: auto;
-    color: white;
-    transition: all 0.2s ease-in-out;
-    margin-bottom: 4rem;
-    border: none;
-}
-
-#run-button,
-.gantt-heading-button,
-.gantt-heading-button:focus {
-    background-color: var(--theme);
-}
-
-#run-button:hover,
-.gantt-heading-button:hover {
-    filter: brightness(80%);
-}
-
-#cancel-button {
-    background-color: var(--red-light);
-}
-
-#cancel-button:hover {
-    background-color: var(--red-dark);
-}
-
-.gantt-heading-button {
-    width: auto;
-    margin: 0;
-    font-size: 1.2rem;
-    padding: 1.2rem 2.4rem;
 }
 
 .tab-fail {
@@ -351,114 +85,6 @@ div.tab.tab--disabled {
     margin-bottom: 20px;
 }
 
-.solution-stats-table {
-    font-size: 1.5rem;
-    border: 1px solid var(--grey-light);
-}
-
-.solution-stats-table th {
-    text-align: center;
-    background-color: var(--grey-lighter);
-    width: 20rem;
-    font-size: 1.8rem;
-}
-
-.solution-stats-table th:nth-child(2n+1),
-.solution-stats-table td:nth-child(2n+1) {
-    text-align: left;
-}
-
-.solution-stats-table td:nth-child(2n) {
-    border-right: 1px solid var(--grey-light);
-}
-
-.details-collapse,
-.details-collapse:hover,
-.details-collapse:focus {
-    border: none;
-    background: none;
-    display: flex;
-    padding: 0 2rem 0 0;
-    transition: filter 0.2s ease-in-out;
-    text-transform: none;
-    height: auto;
-}
-
-.details-collapse:hover {
-    filter: brightness(70%)
-}
-
-.details-collapse-wrapper {
-    overflow: hidden;
-}
-
-.details-collapse-title {
-    display: flex;
-    justify-content: space-between;
-}
-
-.problem-details-parent {
-    flex: 0 1 content;
-    z-index: 1;
-    background-color: white;
-}
-
-.problem-details {
-    display: flex;
-    justify-content: space-between;
-    align-items: start;
-    margin-right: 4rem;
-}
-
 .stats-makespan {
     font-weight: 400;
-}
-
-.collapse-arrow {
-    border-right: 4px solid var(--grey-light);
-    border-bottom: 4px solid var(--grey-light);
-    transform: rotate(135deg) skew(165deg, 165deg);
-    height: 2rem;
-    width: 2rem;
-    margin-right: -0.3rem;
-    transition: border-color 0.25s ease-in-out;
-}
-
-.details-collapse .collapse-arrow {
-    transform: rotate(225deg) skew(165deg, 165deg);
-    margin: 1.5rem 0 0 1.5rem;
-    border-color: var(--theme);
-    height: 1rem;
-    width: 1rem;
-}
-
-.left-column-collapse:hover .collapse-arrow {
-    border-color: var(--grey);
-}
-
-.collapsed .left-column-collapse {
-    padding: 0 0.5rem 0 0;
-}
-
-.collapsed .left-column-collapse .collapse-arrow {
-    transform: rotate(315deg) skew(165deg, 165deg);
-}
-
-.collapsed .details-collapse .collapse-arrow {
-    margin-top: 1rem;
-    transform: rotate(45deg) skew(165deg, 165deg);
-}
-
-.details-to-collapse {
-    height: var(--problem-details-height);
-    transition: height 0.6s ease-in-out;
-    overflow: hidden;
-}
-
-.collapsed .details-to-collapse {
-    height: 0;
-}
-
-hr {
-    margin: 1rem 0;
 }

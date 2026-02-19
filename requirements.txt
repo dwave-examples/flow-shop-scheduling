@@ -1,6 +1,5 @@
-dash==2.17.1
-diskcache==5.6.3
-dash[diskcache]
+dash[diskcache]~=4.0
+dash-mantine-components~=2.5
 dwave-ocean-sdk>=7.0.0
 matplotlib>=3.3.4
 scipy>=1.10.0

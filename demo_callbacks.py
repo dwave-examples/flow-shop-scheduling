@@ -22,7 +22,7 @@ from dash import MATCH, ctx
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
-from demo_interface import generate_problem_details_table
+from demo_interface import generate_table
 
 from demo_configs import (
     CLASSICAL_TAB_LABEL,
@@ -31,8 +31,9 @@ from demo_configs import (
     SHOW_CQM,
 )
 from src.generate_charts import generate_gantt_chart, get_empty_figure, get_minimum_task_times
-from flow_shop_scheduler import HybridSamplerType, SamplerType, run_shop_scheduler
+from flow_shop_scheduler import run_shop_scheduler
 from src.model_data import FlowShopData
+from src.demo_enums import HybridSolverType, SolverType
 
 BASE_PATH = pathlib.Path(__file__).parent.resolve()
 DATA_PATH = BASE_PATH.joinpath("input").resolve()
@@ -87,7 +88,7 @@ def update_solvers_selected(
         str: Class name for hybrid select wrapper.
     """
     if SHOW_CQM:
-        return "" if SamplerType.HYBRID.value in selected_solvers else "display-none"
+        return "" if SolverType.HYBRID.value in selected_solvers else "display-none"
 
     raise PreventUpdate
 
@@ -138,8 +139,8 @@ def update_tab_loading_state(
     if ctx.triggered_id == "run-button" and run_click > 0:
         running = ("Loading...", True, "tab", True)
         return (
-            *(running if SamplerType.HYBRID.value in solvers else [dash.no_update] * 4),
-            *(running if SamplerType.HIGHS.value in solvers else [dash.no_update] * 4),
+            *(running if SolverType.HYBRID.value in solvers else [dash.no_update] * 4),
+            *(running if SolverType.HIGHS.value in solvers else [dash.no_update] * 4),
             "display-none",
             "",
             "input-tab",
@@ -241,7 +242,7 @@ class RunOptimizationHybridReturn(NamedTuple):
     Output({"type": "gantt-chart-jobsort", "index": 1}, "figure"),
     Output({"type": "gantt-chart-startsort", "index": 1}, "figure"),
     Output("dwave-stats-makespan", "children"),
-    Output("dwave-solution-stats-table", "children"),
+    Output({"type": "problem-details", "index": 1}, "children"),
     Output("dwave-tab", "disabled", allow_duplicate=True),
     Output("dwave-gantt-title-span", "children"),
     Output("dwave-tab", "className", allow_duplicate=True),
@@ -286,7 +287,7 @@ def run_optimization_hybrid(
     if ctx.triggered_id != "run-button" or run_click == 0:
         raise PreventUpdate
 
-    if SamplerType.HYBRID.value not in solvers:
+    if SolverType.HYBRID.value not in solvers:
         return RunOptimizationHybridReturn(
             dwave_tab_class="tab",
             dwave_tab_label=DWAVE_TAB_LABEL,
@@ -299,7 +300,7 @@ def run_optimization_hybrid(
 
     model_data.load_from_file(DATA_PATH.joinpath(filename))
 
-    running_cqm = hybrid_solver is HybridSamplerType.CQM.value
+    running_cqm = hybrid_solver is HybridSolverType.CQM.value
 
     results = run_shop_scheduler(
         model_data,
@@ -311,7 +312,11 @@ def run_optimization_hybrid(
     fig_jobsort = generate_gantt_chart(results, sort_by="JobInt")
     fig_startsort = generate_gantt_chart(results, sort_by="Start")
 
-    solution_stats_table = generate_problem_details_table(
+    # ("Scenario", scenario, "Solver", solver),
+    # ("Number of Jobs", num_jobs, "Solver Time Limit", f"{time_limit}s"),
+    # ("Number of Operations", num_operations, "Wall Clock Time", f"{round(wall_clock_time, 2)}s")
+
+    solution_stats_table = generate_table(
         scenario,
         "CQM Solver" if running_cqm else "NL Solver",
         model_data.get_job_count(),
@@ -351,7 +356,7 @@ class RunOptimizationScipyReturn(NamedTuple):
     Output({"type": "gantt-chart-jobsort", "index": 2}, "figure"),
     Output({"type": "gantt-chart-startsort", "index": 2}, "figure"),
     Output("highs-stats-makespan", "children"),
-    Output("highs-solution-stats-table", "children"),
+    Output({"type": "problem-details", "index": 2}, "children"),
     Output("highs-tab", "disabled", allow_duplicate=True),
     Output({"type": "gantt-heading-button", "index": 2}, "style"),
     Output("highs-tab", "className", allow_duplicate=True),
@@ -395,7 +400,7 @@ def run_optimization_scipy(
     if ctx.triggered_id != "run-button" or run_click == 0:
         raise PreventUpdate
 
-    if SamplerType.HIGHS.value not in solvers:
+    if SolverType.HIGHS.value not in solvers:
         return RunOptimizationScipyReturn(
             highs_tab_class="tab",
             highs_tab_label=CLASSICAL_TAB_LABEL,
@@ -414,7 +419,7 @@ def run_optimization_scipy(
         solver_time_limit=time_limit,
     )
 
-    solution_stats_table = generate_problem_details_table(
+    solution_stats_table = generate_table(
         scenario,
         "HiGHS",
         model_data.get_job_count(),

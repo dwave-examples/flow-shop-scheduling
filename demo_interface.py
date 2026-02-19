@@ -13,8 +13,10 @@
 # limitations under the License.
 
 from __future__ import annotations
+from enum import EnumType
 
 from dash import dcc, html
+import dash_mantine_components as dmc
 
 from demo_configs import (
     CLASSICAL_TAB_LABEL,
@@ -24,59 +26,58 @@ from demo_configs import (
     SCENARIOS,
     SHOW_CQM,
     SOLVER_TIME,
-    THEME_COLOR_SECONDARY,
     THUMBNAIL,
 )
-from flow_shop_scheduler import HybridSamplerType, SamplerType
+from src.demo_enums import HybridSolverType, SolverType
 
-SAMPLER_TYPES = {
-    SamplerType.HYBRID: "Quantum Hybrid" if SHOW_CQM else "Quantum Hybrid (NL)",
-    SamplerType.HIGHS: "Classical (HiGHS)",
-}
-HYBRID_SAMPLER_TYPES = {
-    HybridSamplerType.NL: "Nonlinear (NL)",
-    HybridSamplerType.CQM: "Constrained Quadratic Model (CQM)"
-}
+THEME_COLOR = "#2d4376"
 
 
-def description_card():
-    """A Div containing dashboard title & descriptions."""
+def dropdown(label: str, id: str, options: list) -> html.Div:
+    """Dropdown element for option selection.
+
+    Args:
+        label: The title that goes above the dropdown.
+        id: A unique selector for this element.
+        options: A list of dictionaries of labels and values.
+    """
     return html.Div(
-        id="description-card",
-        children=[html.H1(MAIN_HEADER), html.P(DESCRIPTION)],
-    )
-
-
-def dropdown(
-    label: str, id: str, options: list, wrapper_id: str = "", wrapper_class_name: str = ""
-) -> html.Div:
-    """Slider element for value selection."""
-    return html.Div(
-        id=wrapper_id,
-        className=wrapper_class_name,
+        className="dropdown-wrapper",
         children=[
-            html.Label(label),
-            dcc.Dropdown(
+            html.Label(label, htmlFor=id),
+            dmc.Select(
                 id=id,
-                options=options,
+                data=options,
                 value=options[0]["value"],
-                clearable=False,
-                searchable=False,
+                allowDeselect=False,
             ),
         ],
     )
 
 
-def checklist(label: str, id: str, options: list) -> html.Div:
-    """Slider element for value selection."""
-    return html.Div([
-        html.Label(label),
-        dcc.Checklist(
-            id=id,
-            options=options,
-            value=[options[0]["value"]],
-        )
-    ])
+def checklist(label: str, id: str, options: list, values: list, inline: bool = True) -> html.Div:
+    """Checklist element for option selection.
+
+    Args:
+        label: The title that goes above the checklist.
+        id: A unique selector for this element.
+        options: A list of dictionaries of labels and values.
+        values: A list of values that should be preselected in the checklist.
+        inline: Whether the options of the checklist are displayed beside or below each other.
+    """
+    return html.Div(
+        className="checklist-wrapper",
+        children=[
+            html.Label(label, htmlFor=id),
+            dcc.Checklist(
+                id=id,
+                className=f"checklist{' checklist--inline' if inline else ''}",
+                inline=inline,
+                options=options,
+                value=values,
+            ),
+        ],
+    )
 
 
 def generate_graph(visible: bool, type: str, index: int) -> html.Div:
@@ -97,19 +98,16 @@ def generate_graph(visible: bool, type: str, index: int) -> html.Div:
     )
 
 
-def generate_solution_tab(label: str, title: str, tab: str, index: int) -> dcc.Tab:
+def generate_solution_tab(title: str, tab: str, index: int) -> dmc.TabsPanel:
     """Generates solution tab containing, solution graphs, sort functionality, and
     problem details dropdown.
 
     Returns:
-        dcc.Tab: A Tab containing the solution graph and problem details.
+        dmc.TabsPanel: A Tab containing the solution graph and problem details.
     """
-    return dcc.Tab(
-        label=label,
-        id=f"{tab}-tab",
-        className="tab",
+    return dmc.TabsPanel(
         value=f"{tab}-tab",
-        disabled=True,
+        tabIndex=11+index,
         children=[
             html.Div(
                 className="solution-card",
@@ -120,13 +118,13 @@ def generate_solution_tab(label: str, title: str, tab: str, index: int) -> dcc.T
                             html.Div(
                                 className="gantt-heading",
                                 children=[
-                                    html.H3(
+                                    html.H2(
                                         [title, html.Span(id=f"{tab}-gantt-title-span")],
                                         className="gantt-title",
                                     ),
                                     html.Button(
                                         id={"type": "gantt-heading-button", "index": index},
-                                        className="gantt-heading-button",
+                                        className="button",
                                         children="Sort by start time",
                                         n_clicks=0,
                                     ),
@@ -144,7 +142,10 @@ def generate_solution_tab(label: str, title: str, tab: str, index: int) -> dcc.T
                     html.Div(
                         [
                             html.Hr(),
-                            html.Div(problem_details(tab, index), className="problem-details"),
+                            html.Div([
+                                html.H5(id=f"{tab}-stats-makespan", className="stats-makespan"),
+                                problem_details(index)
+                            ], className="problem-details"),
                         ],
                         className="problem-details-parent",
                     ),
@@ -154,28 +155,27 @@ def generate_solution_tab(label: str, title: str, tab: str, index: int) -> dcc.T
     )
 
 
-def generate_control_card() -> html.Div:
-    """Generates the control card for the dashboard.
+def generate_options(options: list | EnumType, str_val: bool=False) -> list[dict]:
+    """Generates options for dropdowns, checklists, radios, etc."""
+    if isinstance(options, EnumType):
+        return [{"label": option.label, "value": f"{option.value}" if str_val else option.value} for option in options]
 
-    Contains the dropdowns for selecting the scenario, model, and solver.
+    return [{"label": option, "value": f"{option}" if str_val else option} for option in options]
+
+
+def generate_settings_form() -> html.Div:
+    """This function generates settings for selecting the scenario, model, and solver.
 
     Returns:
-        html.Div: A Div containing the dropdowns for selecting the scenario,
-        model, and solver.
+        html.Div: A Div containing the settings for selecting the scenario, model, and solver.
     """
 
-    scenario_options = [{"label": scenario, "value": scenario} for scenario in SCENARIOS]
-    sampler_options = [
-        {"label": label, "value": sampler_type.value}
-        for sampler_type, label in SAMPLER_TYPES.items()
-    ]
-    hybrid_sampler_options = [
-        {"label": label, "value": hybrid_sampler_type.value}
-        for hybrid_sampler_type, label in HYBRID_SAMPLER_TYPES.items()
-    ]
+    scenario_options = generate_options(SCENARIOS, True)
+    solver_options = generate_options(SolverType, False)
+    hybrid_solver_options = generate_options(HybridSolverType, True)
 
     return html.Div(
-        id="control-card",
+        className="settings",
         children=[
             dropdown(
                 "Scenario (jobs x operations)",
@@ -185,103 +185,100 @@ def generate_control_card() -> html.Div:
             checklist(
                 "Solver (hybrid and/or classical)",
                 "solver-select",
-                sorted(sampler_options, key=lambda op: op["value"]),
+                sorted(solver_options, key=lambda op: op["value"]),
+                [0, 1],
             ),
-            dropdown(
-                "Quantum Hybrid Solver",
-                "hybrid-select",
-                sorted(hybrid_sampler_options, key=lambda op: op["value"]),
-                "hybrid-select-wrapper",
-                "" if SHOW_CQM else "display-none",
+            html.Div(
+                dropdown(
+                    "Quantum Hybrid Solver",
+                    "hybrid-select",
+                    sorted(hybrid_solver_options, key=lambda op: op["value"]),
+                ),
+                id="hybrid-select-wrapper",
+                className="" if SHOW_CQM else "display-none",
             ),
-            html.Label("Solver Time Limit (seconds)"),
-            dcc.Input(
+            html.Label("Solver Time Limit (seconds)", htmlFor="solver-time-limit"),
+            dmc.NumberInput(
                 id="solver-time-limit",
                 type="number",
                 **SOLVER_TIME,
-            ),
-            html.Div(
-                id="button-group",
-                children=[
-                    html.Button(id="run-button", children="Run Optimization", n_clicks=0),
-                    html.Button(
-                        id="cancel-button",
-                        children="Cancel Optimization",
-                        n_clicks=0,
-                        className="display-none",
-                    ),
-                ],
             ),
         ],
     )
 
 
-def generate_problem_details_table(
-    scenario: str, solver: str, num_jobs: int, time_limit: int, num_operations: int, wall_clock_time: float
-) -> html.Tbody:
-    """Generate the problem details table.
-
-    Args:
-        scenario: The scenario that was optimized.
-        solver: The solver used for optimization.
-        num_jobs: The number of jobs in the scenario.
-        time_limit: The solver time limit.
-        num_operations: The number of operations in the scenario.
-        wall_clock_time: The overall time to optimize the scenario.
-
-    Returns:
-        html.Tbody: Tbody containing table rows for problem details.
-    """
-
-    table_rows = (
-        ("Scenario", scenario, "Solver", solver),
-        ("Number of Jobs", num_jobs, "Solver Time Limit", f"{time_limit}s"),
-        ("Number of Operations", num_operations, "Wall Clock Time", f"{round(wall_clock_time, 2)}s")
+def generate_run_buttons() -> html.Div:
+    """Run and cancel buttons to run the optimization."""
+    return html.Div(
+        id="button-group",
+        children=[
+            html.Button("Run Optimization", id="run-button", className="button"),
+            html.Button(
+                "Cancel Optimization",
+                id="cancel-button",
+                className="button",
+                style={"display": "none"},
+            ),
+        ],
     )
 
-    return html.Tbody([html.Tr([html.Td(cell) for cell in row]) for row in table_rows])
+
+def generate_table(table_data: dict[str, list]) -> html.Table:
+    """Generates a table containing table_data.
+
+    Args:
+        table_data: A dictionary of table header keys and table column values.
+
+    Returns:
+        html.Table: An HTML table containing table_data.
+    """
+    table_columns = table_data.values()
+    num_rows = len(next(iter(table_columns)))
+
+    return html.Table(
+        className="problem-details-table",
+        children=[
+            html.Thead(html.Tr([html.Th(table_header) for table_header in table_data.keys()])),
+            html.Tbody(
+                [
+                    html.Tr(
+                        [
+                            html.Td(column[i]) for column in table_columns
+                        ]
+                    ) for i in range(num_rows)
+                ]
+            ),
+        ],
+    )
 
 
-def problem_details(solver: str, index: int) -> html.Div:
+def problem_details(index: int) -> html.Div:
     """Generate the problem details section.
 
     Args:
-        solver: Which solver tab to generate the section for. Either "dwave" or "highs"
         index: Unique element id to differentiate matching elements.
+            Must be different from left column collapse button.
 
     Returns:
         html.Div: Div containing a collapsable table.
     """
     return html.Div(
-        [
-            html.Div(
-                id={"type": "to-collapse-class", "index": index},
-                className="details-collapse-wrapper collapsed",
+        id={"type": "to-collapse-class", "index": index},
+        className="details-collapse-wrapper collapsed",
+        children=[
+            # Problem details collapsible button and header
+            html.Button(
+                id={"type": "collapse-trigger", "index": index},
+                className="details-collapse",
                 children=[
-                    html.Div(
-                        className="details-collapse-title",
-                        children=[
-                            html.H5(id=f"{solver}-stats-makespan", className="stats-makespan"),
-                            html.Button(
-                                id={"type": "collapse-trigger", "index": index},
-                                className="details-collapse",
-                                children=[
-                                    html.H5("Problem Details"),
-                                    html.Div(className="collapse-arrow"),
-                                ],
-                            ),
-                        ],
-                    ),
-                    html.Div(
-                        className="details-to-collapse",
-                        children=[
-                            html.Table(
-                                className="solution-stats-table",
-                                id=f"{solver}-solution-stats-table",
-                            ),
-                        ],
-                    ),
+                    html.H5("Problem Details"),
+                    html.Div(className="collapse-arrow"),
                 ],
+                **{"aria-expanded": "true"},
+            ),
+            html.Div(
+                className="details-to-collapse",
+                id={"type": "problem-details", "index": index}
             ),
         ],
     )
@@ -292,12 +289,18 @@ def create_interface():
     return html.Div(
         id="app-container",
         children=[
+            html.A(  # Skip link for accessibility
+                "Skip to main content",
+                href="#main-content",
+                id="skip-to-main",
+                className="skip-link",
+                tabIndex=1,
+            ),
             dcc.Store("running-dwave"),
             dcc.Store("running-classical"),
-            # Banner
-            html.Div(id="banner", children=[html.Img(src=THUMBNAIL)]),
-            html.Div(
-                id="columns",
+            html.Main(
+                className="columns-main",
+                id="main-content",
                 children=[
                     # Left column
                     html.Div(
@@ -305,36 +308,93 @@ def create_interface():
                         className="left-column",
                         children=[
                             html.Div(
-                                [  # Fixed width Div to collapse
+                                className="left-column-layer-1",  # Fixed width Div to collapse
+                                children=[
                                     html.Div(
-                                        [  # Padding and content wrapper
-                                            description_card(),
-                                            generate_control_card(),
-                                        ]
+                                        className="left-column-layer-2",  # Padding and content wrapper
+                                        children=[
+                                            html.Div(
+                                                [
+                                                    html.H1(MAIN_HEADER),
+                                                    html.P(DESCRIPTION),
+                                                ],
+                                                className="title-section",
+                                            ),
+                                            html.Div(
+                                                [
+                                                    html.Div(
+                                                        html.Div(
+                                                            [
+                                                                generate_settings_form(),
+                                                                generate_run_buttons(),
+                                                            ],
+                                                            className="settings-and-buttons",
+                                                        ),
+                                                        className="settings-and-buttons-wrapper",
+                                                    ),
+                                                    # Left column collapse button
+                                                    html.Div(
+                                                        html.Button(
+                                                            id={
+                                                                "type": "collapse-trigger",
+                                                                "index": 0,
+                                                            },
+                                                            className="left-column-collapse",
+                                                            title="Collapse sidebar",
+                                                            children=[
+                                                                html.Div(className="collapse-arrow")
+                                                            ],
+                                                            **{"aria-expanded": "true"},
+                                                        ),
+                                                    ),
+                                                ],
+                                                className="form-section",
+                                            ),
+                                        ],
                                     )
-                                ]
-                            ),
-                            html.Div(
-                                html.Button(
-                                    id={"type": "collapse-trigger", "index": 0},
-                                    className="left-column-collapse",
-                                    children=[html.Div(className="collapse-arrow")],
-                                ),
+                                ],
                             ),
                         ],
                     ),
                     # Right column
                     html.Div(
-                        id="right-column",
+                        className="right-column",
                         children=[
-                            dcc.Tabs(
+                            dmc.Tabs(
                                 id="tabs",
                                 value="input-tab",
+                                color="white",
                                 children=[
-                                    dcc.Tab(
-                                        label="Input",
+                                    html.Header(
+                                        className="banner",
+                                        children=[
+                                            html.Nav(
+                                                [
+                                                    dmc.TabsList(
+                                                        [
+                                                            dmc.TabsTab("Input", value="input-tab"),
+                                                            dmc.TabsTab(
+                                                                DWAVE_TAB_LABEL,
+                                                                value="dwave-tab",
+                                                                id="dwave-tab",
+                                                                disabled=True,
+                                                            ),
+                                                            dmc.TabsTab(
+                                                                CLASSICAL_TAB_LABEL,
+                                                                value="highs-tab",
+                                                                id="highs-tab",
+                                                                disabled=True,
+                                                            ),
+                                                        ]
+                                                    ),
+                                                ]
+                                            ),
+                                            html.Img(src=THUMBNAIL, alt="D-Wave logo"),
+                                        ],
+                                    ),
+                                    dmc.TabsPanel(
                                         value="input-tab",
-                                        className="tab",
+                                        tabIndex="12",
                                         children=[
                                             html.Div(
                                                 className="gantt-chart-card",
@@ -342,7 +402,7 @@ def create_interface():
                                                     html.Div(
                                                         className="gantt-heading",
                                                         children=[
-                                                            html.H3(
+                                                            html.H2(
                                                                 "Unscheduled Jobs and Operations",
                                                                 className="gantt-title",
                                                             ),
@@ -351,7 +411,7 @@ def create_interface():
                                                                     "type": "gantt-heading-button",
                                                                     "index": 0,
                                                                 },
-                                                                className="gantt-heading-button",
+                                                                className="button",
                                                                 children="Show Conflicts",
                                                                 n_clicks=0,
                                                             ),
@@ -362,7 +422,7 @@ def create_interface():
                                                         parent_className="graph-wrapper",
                                                         type="circle",
                                                         delay_show=300,
-                                                        color=THEME_COLOR_SECONDARY,
+                                                        color=THEME_COLOR,
                                                         children=[
                                                             generate_graph(True, "unscheduled", 0),
                                                             generate_graph(False, "conflicts", 0),
@@ -373,10 +433,10 @@ def create_interface():
                                         ],
                                     ),
                                     generate_solution_tab(
-                                        DWAVE_TAB_LABEL, "Quantum Hybrid Solver", "dwave", 1
+                                        "Quantum Hybrid Solver", "dwave", 1
                                     ),
                                     generate_solution_tab(
-                                        CLASSICAL_TAB_LABEL, "Classical Solver (HiGHS)", "highs", 2
+                                        "Classical Solver (HiGHS)", "highs", 2
                                     ),
                                 ],
                             )
