@@ -20,7 +20,7 @@ import dash
 import diskcache
 from dash import DiskcacheManager
 
-from demo_configs import APP_TITLE
+from demo_configs import APP_TITLE, THEME_COLOR, THEME_COLOR_SECONDARY
 from demo_interface import create_interface
 
 # Essential for initializing callbacks. Do not remove.
@@ -50,6 +50,16 @@ app = dash.Dash(
 app.title = APP_TITLE
 
 app.config.suppress_callback_exceptions = True
+
+# Generates css file and variable using THEME_COLOR and THEME_COLOR_SECONDARY settings
+css = f"""/* Generated theme settings css file, see app.py */
+:root {{
+    --theme: {THEME_COLOR};
+    --theme-secondary: {THEME_COLOR_SECONDARY};
+}}
+"""
+with open("assets/theme.css", "w") as f:
+    f.write(css)
 
 app.index_string = """
 <!DOCTYPE html>

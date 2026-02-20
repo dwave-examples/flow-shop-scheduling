@@ -115,7 +115,7 @@ h5 {
     font-weight: 500;
 }
 
-label {
+label:not(.dash-options-list-option) {
     margin: 2rem 0 0.2rem;
     font-weight: 500;
 }
@@ -347,10 +347,6 @@ div.tab.tab--disabled {
     border-top: 3px solid var(--orange) !important;
 }
 
-#solver-time-limit {
-    margin-bottom: 20px;
-}
-
 .solution-stats-table {
     font-size: 1.5rem;
     border: 1px solid var(--grey-light);
@@ -461,4 +457,8 @@ div.tab.tab--disabled {
 
 hr {
     margin: 1rem 0;
+}
+
+#button-group {
+    margin-top: 4rem;
 }
