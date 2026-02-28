@@ -60,12 +60,12 @@ def generate_greedy_makespan(job_data: FlowShopData, num_samples: int = 100) -> 
 
 
 class JobShopSchedulingModel:
-    """Builds and solves a Job Shop Scheduling problem using CQM or the NL Solver.
+    """Builds and solves a Job Shop Scheduling problem using CQM or the Stride Solver.
 
     Args:
         model_data (FlowShopData): The data for the flow shop scheduling
         max_makespan (int, optional): The maximum makespan allowed for the schedule.
-            If None, the makespan will be set to a value that is greedy_mulitiplier
+            If None, the makespan will be set to a value that is greedy_multiplier
             times the makespan found by the greedy algorithm. Defaults to None.
         greedy_multiplier (float, optional): The multiplier to apply to the greedy makespan,
             to get the upperbound on the makespan. Defaults to 1.4.
@@ -73,7 +73,7 @@ class JobShopSchedulingModel:
     Attributes:
         model_data (FlowShopData): The data for the flow shop scheduling
         cqm (ConstrainedQuadraticModel): The CQM model
-        nl_model (nlsolver.Model): The NL Solver model
+        stride_model (stride.Model): The Stride Solver model
         solution (dict): The solution to the problem
         makespan (int): The final makespan of the schedule
         max_makespan (int): The maximum makespan allowed for the schedule
@@ -85,7 +85,7 @@ class JobShopSchedulingModel:
     ):
         self.model_data = model_data
         self.cqm = None
-        self.nl_model = None
+        self.stride_model = None
 
         # CQM specifics
         self._x = {}
@@ -102,9 +102,9 @@ class JobShopSchedulingModel:
         """Define CQM model."""
         self.cqm = ConstrainedQuadraticModel()
 
-    def create_nl_model(self) -> None:
-        """Create NL model."""
-        self.nl_model = flow_shop_scheduling(processing_times=self.model_data.processing_times)
+    def create_stride_model(self) -> None:
+        """Create Stride model."""
+        self.stride_model = flow_shop_scheduling(processing_times=self.model_data.processing_times)
 
     def define_cqm_variables(self) -> None:
         """Define CQM variables."""
@@ -260,8 +260,8 @@ class JobShopSchedulingModel:
         """Calculate the end-times for the FSS job results.
 
         Helper function to calculate the end-times for the FSS job
-        results obtained from the NL Solver. Taken directly from the
-        FSS generator in the NL Solver generators module.
+        results obtained from the Stride Solver. Taken directly from the
+        FSS generator in the Stride Solver generators module.
 
         Update when symbol labels are supported.
 
@@ -270,7 +270,7 @@ class JobShopSchedulingModel:
         """
         times = self.model_data.processing_times
 
-        order = next(self.nl_model.iter_decisions()).state(0).astype(int)
+        order = next(self.stride_model.iter_decisions()).state(0).astype(int)
 
         end_times = []
         for machine_m, _ in enumerate(times):
@@ -304,8 +304,8 @@ class JobShopSchedulingModel:
 
         return end_times
 
-    def call_nl_solver(self, time_limit: int) -> None:
-        """Calls NL solver.
+    def call_stride_solver(self, time_limit: int) -> None:
+        """Calls Stride solver.
 
         Args:
             time_limit (int): time limit in seconds
@@ -315,7 +315,7 @@ class JobShopSchedulingModel:
         """
         sampler = LeapHybridNLSampler()
         sampler.sample(
-            self.nl_model,
+            self.stride_model,
             time_limit=time_limit,
             label="Examples - Flow Shop Scheduling"
         )
@@ -324,7 +324,7 @@ class JobShopSchedulingModel:
 
         for machine_idx, machine_times in enumerate(end_times):
             for job_idx, end_time in enumerate(machine_times):
-                job = int(next(self.nl_model.iter_decisions()).state()[job_idx])
+                job = int(next(self.stride_model.iter_decisions()).state()[job_idx])
 
                 resource = self.model_data.resource_names[machine_idx]
                 task = self.model_data.get_resource_job_tasks(job=str(job), resource=resource)
@@ -385,20 +385,20 @@ def run_shop_scheduler(
     Args:
         job_data (FlowShopData): A FlowShopData object that holds the data for this flow shop
             scheduling problem.
-        solver_time_limit (int, optional): Upperbound on how long the schedule can be; leave empty to
+        solver_time_limit (int, optional): Upper bound on how long the schedule can be; leave empty to
             auto-calculate an appropriate value. Defaults to None.
         use_scipy_solver (bool, optional): Whether to use the HiGHS via SciPy solver instead of a
             hybrid solver. Overrides the ``use_cqm_solver`` if both are True. Defaults to False.
-        use_cqm_solver (bool, optional): Whether to use the CQM solver instead of the NL solver.
+        use_cqm_solver (bool, optional): Whether to use the CQM solver instead of the Stride solver.
             Overridden by ``use_scipy_solver`` argument when both are True. Defaults to False.
         verbose (bool, optional): Whether to print verbose output. Defaults to False.
         out_sol_file (str, optional): Path to the output solution file. Defaults to None.
         out_plot_file (str, optional): Path to the output plot file. Defaults to None.
         profile (str, optional): The profile variable to pass to the Sampler. Defaults to None.
-        max_makespan (int, optional): Upperbound on how long the schedule can be; leave empty to
+        max_makespan (int, optional): Upper bound on how long the schedule can be; leave empty to
             auto-calculate an appropriate value. Defaults to None.
         greedy_multiplier (float, optional): The multiplier to apply to the greedy makespan,
-            to get the upperbound on the makespan. Defaults to 1.4.
+            to get the upper bound on the makespan. Defaults to 1.4.
 
     Returns:
         pd.DataFrame: A DataFrame that has the following columns: Task, Start, Finish, and
@@ -430,10 +430,10 @@ def run_shop_scheduler(
             print("Solving using the CQM solver")
             model.call_cqm_solver(time_limit=solver_time_limit, profile=profile)
     else:
-        print("Creating an NL model")
-        model.create_nl_model()
-        print("Solving using the NL solver")
-        model.call_nl_solver(time_limit=solver_time_limit)
+        print("Creating a Stride model")
+        model.create_stride_model()
+        print("Solving using the Stride solver")
+        model.call_stride_solver(time_limit=solver_time_limit)
 
     # Write solution to a file.
     if out_sol_file is not None:
@@ -493,7 +493,7 @@ if __name__ == "__main__":
         "-cqm",
         "--use_cqm_solver",
         action="store_true",
-        help="Whether to use the CQM solver instead of the NL or SciPy solver",
+        help="Whether to use the CQM solver instead of the Stride or SciPy solver",
     )
 
     parser.add_argument(
@@ -512,7 +512,7 @@ if __name__ == "__main__":
         "-mm",
         "--max_makespan",
         type=int,
-        help="Upperbound on how long the schedule can be; leave empty to auto-calculate an appropriate value.",
+        help="Upper bound on how long the schedule can be; leave empty to auto-calculate an appropriate value.",
         default=None,
     )
 

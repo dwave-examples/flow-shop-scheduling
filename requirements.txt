@@ -1,9 +1,9 @@
 dash[diskcache]~=4.0
 dash-mantine-components~=2.5
-dwave-ocean-sdk>=7.0.0
-matplotlib>=3.3.4
-scipy>=1.10.0
-pandas>=2.2.0
+dwave-ocean-sdk~=9.3
+matplotlib~=3.10
+scipy~=1.17
+pandas~=2.3
 # Upgrade Plotly to >= 6 once more information is known about:
 # https://github.com/dwave-examples/flow-shop-scheduling/issues/12
 plotly~=5.24

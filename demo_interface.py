@@ -124,7 +124,7 @@ def generate_solution_tab(title: str, tab: str, index: int) -> dmc.TabsPanel:
                                     ),
                                     html.Button(
                                         id={"type": "gantt-heading-button", "index": index},
-                                        className="button",
+                                        className="button button-small",
                                         children="Sort by start time",
                                         n_clicks=0,
                                     ),
@@ -411,7 +411,7 @@ def create_interface():
                                                                     "type": "gantt-heading-button",
                                                                     "index": 0,
                                                                 },
-                                                                className="button",
+                                                                className="button button-small",
                                                                 children="Show Conflicts",
                                                                 n_clicks=0,
                                                             ),

@@ -28,17 +28,8 @@ limitations under the License.
     display: none !important;
 }
 
-.wait_time_graph > div, .patient_score_graph > div {
-    height: 100% !important;
-    width: 100% !important;
-}
-
 .draglayer {
     cursor: pointer !important;
-}
-
-#control-card > p {
-    font-weight: bold;
 }
 
 .solution-card {
@@ -52,7 +43,7 @@ limitations under the License.
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 2rem;
+    padding: 1rem;
 }
 
 .graph-wrapper,
@@ -65,20 +56,27 @@ limitations under the License.
     display: flex;
     justify-content: space-between;
     align-items: end;
-    margin-right: 20rem;
-    margin-left: 4.3rem;
+    margin-right: 11rem;
+    margin-left: 3rem;
+}
+.mantine-Tabs-tab:hover:where(:not([data-active]))
+
+.tab-fail:where(:not([data-active])),
+.mantine-Tabs-tab:hover:where(:not([data-active])).tab-fail {
+    border-top-color: var(--red-light);
+    border-style: solid;
 }
 
-.tab-fail {
-    border-top: 3px solid var(--red-light) !important;
+.tab-success:where(:not([data-active])),
+.mantine-Tabs-tab:hover:where(:not([data-active])).tab-success {
+    border-top-color: var(--teal-darker);
+    border-style: solid;
 }
 
-.tab-success {
-    border-top: 3px solid var(--teal-darker) !important;
-}
-
-.tab-warning {
-    border-top: 3px solid var(--orange) !important;
+.tab-warning:where(:not([data-active])),
+.mantine-Tabs-tab:hover:where(:not([data-active])).tab-warning {
+    border-top-color: var(--orange);
+    border-style: solid;
 }
 
 #solver-time-limit {
@@ -87,4 +85,21 @@ limitations under the License.
 
 .stats-makespan {
     font-weight: 400;
+    flex: 1 0 content;
+    margin-right: 4rem;
+}
+
+.problem-details-parent {
+    z-index: 1;
+}
+
+.problem-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    padding: 0 2rem;
+}
+
+.button-small {
+    padding: 0.35rem 1rem;
 }

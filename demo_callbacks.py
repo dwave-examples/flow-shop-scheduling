@@ -79,7 +79,7 @@ def toggle_left_column(collapse_trigger: int, to_collapse_class: str) -> tuple[s
 def update_solvers_selected(
     selected_solvers: list[int],
 ) -> str:
-    """Hide NL/CQM selector when Hybrid is unselected. Not applicable when SHOW_CQM is False.
+    """Hide Stride/CQM selector when Hybrid is unselected. Not applicable when SHOW_CQM is False.
 
     Args:
         selected_solvers (list[int]): Currently selected solvers.
@@ -102,8 +102,8 @@ def update_solvers_selected(
     Output("highs-tab", "disabled"),
     Output("highs-tab", "className"),
     Output("running-classical", "data"),
-    Output("run-button", "className"),
-    Output("cancel-button", "className"),
+    Output("run-button", "style"),
+    Output("cancel-button", "style"),
     Output("tabs", "value"),
     [
         Input("run-button", "n_clicks"),
@@ -113,7 +113,7 @@ def update_solvers_selected(
 )
 def update_tab_loading_state(
     run_click: int, cancel_click: int, solvers: list[str]
-) -> tuple[str, bool, str, bool, str, bool, str, bool, str, str, str]:
+) -> tuple[str, bool, str, bool, str, bool, str, bool, dict, dict, str]:
     """Updates the tab loading state after the run button
     or cancel button has been clicked.
 
@@ -131,8 +131,8 @@ def update_tab_loading_state(
         bool: True if Classical tab should be disabled, False otherwise.
         str: Class name for the Classical tab.
         bool: Whether HiGHS is running.
-        str: Run button class.
-        str: Cancel button class.
+        dict: Run button style.
+        dict: Cancel button style.
         str: The value of the tab that should be active.
     """
 
@@ -141,8 +141,8 @@ def update_tab_loading_state(
         return (
             *(running if SolverType.HYBRID.value in solvers else [dash.no_update] * 4),
             *(running if SolverType.HIGHS.value in solvers else [dash.no_update] * 4),
-            "display-none",
-            "",
+            {"display": "none"},
+            {},
             "input-tab",
         )
 
@@ -153,16 +153,16 @@ def update_tab_loading_state(
             *not_running,
             CLASSICAL_TAB_LABEL,
             *not_running,
-            "",
-            "display-none",
+            {},
+            {"display": "none"},
             dash.no_update,
         )
     raise PreventUpdate
 
 
 @dash.callback(
-    Output("run-button", "className", allow_duplicate=True),
-    Output("cancel-button", "className", allow_duplicate=True),
+    Output("run-button", "style", allow_duplicate=True),
+    Output("cancel-button", "style", allow_duplicate=True),
     background=True,
     inputs=[
         Input("running-dwave", "data"),
@@ -170,7 +170,7 @@ def update_tab_loading_state(
     ],
     prevent_initial_call=True,
 )
-def update_button_visibility(running_dwave: bool, running_classical: bool) -> tuple[str, str]:
+def update_button_visibility(running_dwave: bool, running_classical: bool) -> tuple[dict, dict]:
     """Updates the visibility of the run and cancel buttons.
 
     Args:
@@ -178,13 +178,13 @@ def update_button_visibility(running_dwave: bool, running_classical: bool) -> tu
         running_classical (bool): Whether the Classical solver is running.
 
     Returns:
-        str: Run button class.
-        str: Cancel button class.
+        dict: Run button style.
+        dict: Cancel button style.
     """
     if not running_classical and not running_dwave:
-        return "", "display-none"
+        return {}, {"display": "none"}
 
-    return "display-none", ""
+    return {"display": "none"}, {}
 
 
 @dash.callback(
@@ -312,17 +312,15 @@ def run_optimization_hybrid(
     fig_jobsort = generate_gantt_chart(results, sort_by="JobInt")
     fig_startsort = generate_gantt_chart(results, sort_by="Start")
 
-    # ("Scenario", scenario, "Solver", solver),
-    # ("Number of Jobs", num_jobs, "Solver Time Limit", f"{time_limit}s"),
-    # ("Number of Operations", num_operations, "Wall Clock Time", f"{round(wall_clock_time, 2)}s")
-
     solution_stats_table = generate_table(
-        scenario,
-        "CQM Solver" if running_cqm else "NL Solver",
-        model_data.get_job_count(),
-        time_limit,
-        model_data.get_resource_count(),
-        time.perf_counter() - start,
+        {
+            "Scenario": [scenario],
+            "Solver": ["CQM Solver" if running_cqm else "Stride Solver"],
+            "Number of Jobs": [model_data.get_job_count()],
+            "Solver Time Limit": [f"{time_limit}s"],
+            "Number of Operations": [model_data.get_resource_count()],
+            "Wall Clock Time": [f"{round(time.perf_counter() - start, 2)}s"]
+        }
     )
 
     return RunOptimizationHybridReturn(
@@ -331,7 +329,7 @@ def run_optimization_hybrid(
         dwave_makespan=f"Makespan: {int(results['Finish'].max())}",
         dwave_solution_stats_table=solution_stats_table,
         dwave_tab_disabled=False,
-        dwave_gantt_title_span=" (CQM)" if running_cqm else " (NL)",
+        dwave_gantt_title_span=" (CQM)" if running_cqm else " (Stride)",
         dwave_tab_class="tab-success",
         dwave_tab_label=DWAVE_TAB_LABEL,
         running_dwave=False,
@@ -418,14 +416,16 @@ def run_optimization_scipy(
         use_scipy_solver=True,
         solver_time_limit=time_limit,
     )
-
+    
     solution_stats_table = generate_table(
-        scenario,
-        "HiGHS",
-        model_data.get_job_count(),
-        time_limit,
-        model_data.get_resource_count(),
-        time.perf_counter() - start
+        {
+            "Scenario": [scenario],
+            "Solver": ["HiGHS"],
+            "Number of Jobs": [model_data.get_job_count()],
+            "Solver Time Limit": [f"{time_limit}s"],
+            "Number of Operations": [model_data.get_resource_count()],
+            "Wall Clock Time": [f"{round(time.perf_counter() - start, 2)}s"]
+        }
     )
     makespan = f"Makespan: {0 if results.empty else int(results['Finish'].max())}"
 
