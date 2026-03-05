@@ -145,15 +145,6 @@ def generate_solution_tab(title: str, tab: str, index: int) -> dmc.TabsPanel:
                             ),
                         ],
                     ),
-                    html.Div(
-                        [
-                            html.Hr(),
-                            html.Div([
-                                problem_details(index)
-                            ], className="problem-details"),
-                        ],
-                        className="problem-details-parent",
-                    ),
                 ],
             ),
         ],
@@ -223,67 +214,6 @@ def generate_run_buttons() -> html.Div:
                 id="cancel-button",
                 className="button",
                 style={"display": "none"},
-            ),
-        ],
-    )
-
-
-def generate_table(table_data: dict[str, list]) -> html.Table:
-    """Generates a table containing table_data.
-
-    Args:
-        table_data: A dictionary of table header keys and table column values.
-
-    Returns:
-        html.Table: An HTML table containing table_data.
-    """
-    table_columns = table_data.values()
-    num_rows = len(next(iter(table_columns)))
-
-    return html.Table(
-        className="problem-details-table",
-        children=[
-            html.Thead(html.Tr([html.Th(table_header) for table_header in table_data.keys()])),
-            html.Tbody(
-                [
-                    html.Tr(
-                        [
-                            html.Td(column[i]) for column in table_columns
-                        ]
-                    ) for i in range(num_rows)
-                ]
-            ),
-        ],
-    )
-
-
-def problem_details(index: int) -> html.Div:
-    """Generate the problem details section.
-
-    Args:
-        index: Unique element id to differentiate matching elements.
-            Must be different from left column collapse button.
-
-    Returns:
-        html.Div: Div containing a collapsable table.
-    """
-    return html.Div(
-        id={"type": "to-collapse-class", "index": index},
-        className="details-collapse-wrapper collapsed",
-        children=[
-            # Problem details collapsible button and header
-            html.Button(
-                id={"type": "collapse-trigger", "index": index},
-                className="details-collapse",
-                children=[
-                    html.H5("Problem Details"),
-                    html.Div(className="collapse-arrow"),
-                ],
-                **{"aria-expanded": "true"},
-            ),
-            html.Div(
-                className="details-to-collapse",
-                id={"type": "problem-details", "index": index}
             ),
         ],
     )

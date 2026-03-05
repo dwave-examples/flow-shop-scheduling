@@ -22,8 +22,6 @@ from dash import MATCH, ctx
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
-from demo_interface import generate_table
-
 from demo_configs import (
     CLASSICAL_TAB_LABEL,
     DWAVE_TAB_LABEL,
@@ -230,7 +228,6 @@ class RunOptimizationHybridReturn(NamedTuple):
     gantt_chart_jobsort: go.Figure = dash.no_update
     gantt_chart_startsort: go.Figure = dash.no_update
     dwave_makespan: str = dash.no_update
-    dwave_solution_stats_table: list = dash.no_update
     dwave_tab_disabled: bool = dash.no_update
     dwave_gantt_title_span: str = dash.no_update
     dwave_tab_class: str = dash.no_update
@@ -242,7 +239,6 @@ class RunOptimizationHybridReturn(NamedTuple):
     Output({"type": "gantt-chart-jobsort", "index": 1}, "figure"),
     Output({"type": "gantt-chart-startsort", "index": 1}, "figure"),
     Output("dwave-makespan", "children"),
-    Output({"type": "problem-details", "index": 1}, "children"),
     Output("dwave-tab", "disabled", allow_duplicate=True),
     Output("dwave-gantt-title-span", "children"),
     Output("dwave-tab", "className", allow_duplicate=True),
@@ -277,7 +273,6 @@ def run_optimization_hybrid(
             go.Figure: Gantt chart for the D-Wave hybrid solver sorted by job.
             go.Figure: Gantt chart for the D-Wave hybrid solver sorted by start time.
             str: Final makespan for the D-Wave tab.
-            list: Solution stats table for problem details.
             bool: True if D-Wave tab should be disabled, False otherwise.
             str: Graph title span to add the solver type to.
             str: Class name for the D-Wave tab.
@@ -294,7 +289,6 @@ def run_optimization_hybrid(
             running_dwave=False
         )
 
-    start = time.perf_counter()
     model_data = FlowShopData()
     filename = SCENARIOS[scenario]
 
@@ -312,22 +306,10 @@ def run_optimization_hybrid(
     fig_jobsort = generate_gantt_chart(results, sort_by="JobInt")
     fig_startsort = generate_gantt_chart(results, sort_by="Start")
 
-    solution_stats_table = generate_table(
-        {
-            "Solver": ["CQM Solver" if running_cqm else "Stride Solver"],
-            "Time Limit": [f"{time_limit}s"],
-            "Wall Clock Time": [f"{round(time.perf_counter() - start, 2)}s"],
-            "Scenario": [scenario],
-            "Jobs": [model_data.get_job_count()],
-            "Operations": [model_data.get_resource_count()],
-        }
-    )
-
     return RunOptimizationHybridReturn(
         gantt_chart_jobsort=fig_jobsort,
         gantt_chart_startsort=fig_startsort,
         dwave_makespan=int(results['Finish'].max()),
-        dwave_solution_stats_table=solution_stats_table,
         dwave_tab_disabled=False,
         dwave_gantt_title_span=" (CQM)" if running_cqm else " (Stride)",
         dwave_tab_class="tab-success",
@@ -342,7 +324,6 @@ class RunOptimizationScipyReturn(NamedTuple):
     gantt_chart_jobsort: go.Figure = dash.no_update
     gantt_chart_startsort: go.Figure = dash.no_update
     highs_makespan: str = dash.no_update
-    highs_solution_stats_table: list = dash.no_update
     highs_tab_disabled: bool = dash.no_update
     sort_button_style: dict = dash.no_update
     highs_tab_class: str = dash.no_update
@@ -354,7 +335,6 @@ class RunOptimizationScipyReturn(NamedTuple):
     Output({"type": "gantt-chart-jobsort", "index": 2}, "figure"),
     Output({"type": "gantt-chart-startsort", "index": 2}, "figure"),
     Output("highs-makespan", "children"),
-    Output({"type": "problem-details", "index": 2}, "children"),
     Output("highs-tab", "disabled", allow_duplicate=True),
     Output({"type": "gantt-heading-button", "index": 2}, "style"),
     Output("highs-tab", "className", allow_duplicate=True),
@@ -388,7 +368,6 @@ def run_optimization_scipy(
             go.Figure: Gantt chart for the Classical solver sorted by job.
             go.Figure: Gantt chart for the Classical solver sorted by start time.
             str: Final makespan for the Classical tab.
-            list: Solution stats table for problem details.
             bool: True if Classical tab should be disabled, False otherwise.
             dict: Sort button style, either display none or nothing.
             str: Class name for the Classical tab.
@@ -405,7 +384,6 @@ def run_optimization_scipy(
             running_classical=False
         )
 
-    start = time.perf_counter()
     model_data = FlowShopData()
     filename = SCENARIOS[scenario]
 
@@ -417,16 +395,6 @@ def run_optimization_scipy(
         solver_time_limit=time_limit,
     )
     
-    solution_stats_table = generate_table(
-        {
-            "Solver": ["HiGHS"],
-            "Time Limit": [f"{time_limit}s"],
-            "Wall Clock Time": [f"{round(time.perf_counter() - start, 2)}s"],
-            "Scenario": [scenario],
-            "Jobs": [model_data.get_job_count()],
-            "Operations": [model_data.get_resource_count()],
-        }
-    )
     makespan = 0 if results.empty else int(results['Finish'].max())
 
     if results.empty:
@@ -435,7 +403,6 @@ def run_optimization_scipy(
             gantt_chart_jobsort=fig,
             gantt_chart_startsort=fig,
             highs_makespan=makespan,
-            highs_solution_stats_table=solution_stats_table,
             highs_tab_disabled=False,
             sort_button_style={"display": "none"},
             highs_tab_class="tab-fail",
@@ -450,7 +417,6 @@ def run_optimization_scipy(
         gantt_chart_jobsort=fig_jobsort,
         gantt_chart_startsort=fig_startsort,
         highs_makespan=makespan,
-        highs_solution_stats_table=solution_stats_table,
         highs_tab_disabled=False,
         sort_button_style={},
         highs_tab_class="tab-success",
