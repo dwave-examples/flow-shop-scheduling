@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 .gantt-title {
-    margin-bottom: 0;
+    margin-bottom: 0.25rem;
 }
 
 #solver-select label {
@@ -59,7 +59,6 @@ limitations under the License.
     margin-right: 11rem;
     margin-left: 3rem;
 }
-.mantine-Tabs-tab:hover:where(:not([data-active]))
 
 .tab-fail:where(:not([data-active])),
 .mantine-Tabs-tab:hover:where(:not([data-active])).tab-fail {
@@ -79,25 +78,8 @@ limitations under the License.
     border-style: solid;
 }
 
-#solver-time-limit {
-    margin-bottom: 20px;
-}
-
-.stats-makespan {
-    font-weight: 400;
-    flex: 1 0 content;
-    margin-right: 4rem;
-}
-
-.problem-details-parent {
-    z-index: 1;
-}
-
-.problem-details {
-    display: flex;
-    justify-content: space-between;
-    align-items: start;
-    padding: 0 2rem;
+.makespan {
+    margin-bottom: 0.25rem;
 }
 
 .button-small {

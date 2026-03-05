@@ -118,10 +118,16 @@ def generate_solution_tab(title: str, tab: str, index: int) -> dmc.TabsPanel:
                             html.Div(
                                 className="gantt-heading",
                                 children=[
-                                    html.H2(
-                                        [title, html.Span(id=f"{tab}-gantt-title-span")],
-                                        className="gantt-title",
-                                    ),
+                                    html.Div([
+                                        html.H2(
+                                            [title, html.Span(id=f"{tab}-gantt-title-span")],
+                                            className="gantt-title",
+                                        ),
+                                        html.H4([
+                                            "Makespan: ",
+                                            html.Span(id=f"{tab}-makespan")
+                                        ], className="makespan"),
+                                    ]),
                                     html.Button(
                                         id={"type": "gantt-heading-button", "index": index},
                                         className="button button-small",
@@ -143,7 +149,6 @@ def generate_solution_tab(title: str, tab: str, index: int) -> dmc.TabsPanel:
                         [
                             html.Hr(),
                             html.Div([
-                                html.H5(id=f"{tab}-stats-makespan", className="stats-makespan"),
                                 problem_details(index)
                             ], className="problem-details"),
                         ],
@@ -183,7 +188,7 @@ def generate_settings_form() -> html.Div:
                 scenario_options,
             ),
             checklist(
-                "Solver (hybrid and/or classical)",
+                "Solver",
                 "solver-select",
                 sorted(solver_options, key=lambda op: op["value"]),
                 [0, 1],

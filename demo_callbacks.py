@@ -94,11 +94,11 @@ def update_solvers_selected(
 
 
 @dash.callback(
-    Output("dwave-tab", "label"),
+    Output("dwave-tab", "children"),
     Output("dwave-tab", "disabled"),
     Output("dwave-tab", "className"),
     Output("running-dwave", "data"),
-    Output("highs-tab", "label"),
+    Output("highs-tab", "children"),
     Output("highs-tab", "disabled"),
     Output("highs-tab", "className"),
     Output("running-classical", "data"),
@@ -241,12 +241,12 @@ class RunOptimizationHybridReturn(NamedTuple):
 @dash.callback(
     Output({"type": "gantt-chart-jobsort", "index": 1}, "figure"),
     Output({"type": "gantt-chart-startsort", "index": 1}, "figure"),
-    Output("dwave-stats-makespan", "children"),
+    Output("dwave-makespan", "children"),
     Output({"type": "problem-details", "index": 1}, "children"),
     Output("dwave-tab", "disabled", allow_duplicate=True),
     Output("dwave-gantt-title-span", "children"),
     Output("dwave-tab", "className", allow_duplicate=True),
-    Output("dwave-tab", "label", allow_duplicate=True),
+    Output("dwave-tab", "children", allow_duplicate=True),
     Output("running-dwave", "data", allow_duplicate=True),
     background=True,
     inputs=[
@@ -314,19 +314,19 @@ def run_optimization_hybrid(
 
     solution_stats_table = generate_table(
         {
-            "Scenario": [scenario],
             "Solver": ["CQM Solver" if running_cqm else "Stride Solver"],
-            "Number of Jobs": [model_data.get_job_count()],
-            "Solver Time Limit": [f"{time_limit}s"],
-            "Number of Operations": [model_data.get_resource_count()],
-            "Wall Clock Time": [f"{round(time.perf_counter() - start, 2)}s"]
+            "Time Limit": [f"{time_limit}s"],
+            "Wall Clock Time": [f"{round(time.perf_counter() - start, 2)}s"],
+            "Scenario": [scenario],
+            "Jobs": [model_data.get_job_count()],
+            "Operations": [model_data.get_resource_count()],
         }
     )
 
     return RunOptimizationHybridReturn(
         gantt_chart_jobsort=fig_jobsort,
         gantt_chart_startsort=fig_startsort,
-        dwave_makespan=f"Makespan: {int(results['Finish'].max())}",
+        dwave_makespan=int(results['Finish'].max()),
         dwave_solution_stats_table=solution_stats_table,
         dwave_tab_disabled=False,
         dwave_gantt_title_span=" (CQM)" if running_cqm else " (Stride)",
@@ -353,12 +353,12 @@ class RunOptimizationScipyReturn(NamedTuple):
 @dash.callback(
     Output({"type": "gantt-chart-jobsort", "index": 2}, "figure"),
     Output({"type": "gantt-chart-startsort", "index": 2}, "figure"),
-    Output("highs-stats-makespan", "children"),
+    Output("highs-makespan", "children"),
     Output({"type": "problem-details", "index": 2}, "children"),
     Output("highs-tab", "disabled", allow_duplicate=True),
     Output({"type": "gantt-heading-button", "index": 2}, "style"),
     Output("highs-tab", "className", allow_duplicate=True),
-    Output("highs-tab", "label", allow_duplicate=True),
+    Output("highs-tab", "children", allow_duplicate=True),
     Output("running-classical", "data", allow_duplicate=True),
     background=True,
     inputs=[
@@ -419,15 +419,15 @@ def run_optimization_scipy(
     
     solution_stats_table = generate_table(
         {
-            "Scenario": [scenario],
             "Solver": ["HiGHS"],
-            "Number of Jobs": [model_data.get_job_count()],
-            "Solver Time Limit": [f"{time_limit}s"],
-            "Number of Operations": [model_data.get_resource_count()],
-            "Wall Clock Time": [f"{round(time.perf_counter() - start, 2)}s"]
+            "Time Limit": [f"{time_limit}s"],
+            "Wall Clock Time": [f"{round(time.perf_counter() - start, 2)}s"],
+            "Scenario": [scenario],
+            "Jobs": [model_data.get_job_count()],
+            "Operations": [model_data.get_resource_count()],
         }
     )
-    makespan = f"Makespan: {0 if results.empty else int(results['Finish'].max())}"
+    makespan = 0 if results.empty else int(results['Finish'].max())
 
     if results.empty:
         fig = get_empty_figure("No solution found for Classical solver")
