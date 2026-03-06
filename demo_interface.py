@@ -24,7 +24,6 @@ from demo_configs import (
     DWAVE_TAB_LABEL,
     MAIN_HEADER,
     SCENARIOS,
-    SHOW_CQM,
     SOLVER_TIME,
     THUMBNAIL,
 )
@@ -50,31 +49,6 @@ def dropdown(label: str, id: str, options: list) -> html.Div:
                 data=options,
                 value=options[0]["value"],
                 allowDeselect=False,
-            ),
-        ],
-    )
-
-
-def checklist(label: str, id: str, options: list, values: list, inline: bool = True) -> html.Div:
-    """Checklist element for option selection.
-
-    Args:
-        label: The title that goes above the checklist.
-        id: A unique selector for this element.
-        options: A list of dictionaries of labels and values.
-        values: A list of values that should be preselected in the checklist.
-        inline: Whether the options of the checklist are displayed beside or below each other.
-    """
-    return html.Div(
-        className="checklist-wrapper",
-        children=[
-            html.Label(label, htmlFor=id),
-            dcc.Checklist(
-                id=id,
-                className=f"checklist{' checklist--inline' if inline else ''}",
-                inline=inline,
-                options=options,
-                value=values,
             ),
         ],
     )
@@ -167,8 +141,6 @@ def generate_settings_form() -> html.Div:
     """
 
     scenario_options = generate_options(SCENARIOS, True)
-    solver_options = generate_options(SolverType, False)
-    hybrid_solver_options = generate_options(HybridSolverType, True)
 
     return html.Div(
         className="settings",
@@ -178,20 +150,40 @@ def generate_settings_form() -> html.Div:
                 "scenario-select",
                 scenario_options,
             ),
-            checklist(
-                "Solver",
-                "solver-select",
-                sorted(solver_options, key=lambda op: op["value"]),
-                [0, 1],
-            ),
-            html.Div(
-                dropdown(
-                    "Quantum Hybrid Solver",
-                    "hybrid-select",
-                    sorted(hybrid_solver_options, key=lambda op: op["value"]),
+            dmc.CheckboxGroup(
+                id="solver-select",
+                label="Solvers",
+                value=[f"{SolverType.HYBRID.value}", f"{SolverType.HIGHS.value}"],
+                children=dmc.Group(
+                    [
+                        dmc.Checkbox(
+                            label=SolverType.HYBRID.label,
+                            value=f"{SolverType.HYBRID.value}",
+                            color=THEME_COLOR,
+                        ),
+                        dmc.RadioGroup(
+                            children=dmc.Group(
+                                [
+                                    dmc.Radio(
+                                        s.label,
+                                        value=f"{s.value}",
+                                        color=THEME_COLOR
+                                    ) for s in HybridSolverType
+                                ]
+                            ),
+                            id="hybrid-select",
+                            value=f"{HybridSolverType.STRIDE.value}",
+                            size="sm",
+                            deselectable=False,
+                            style={"display": "none"},
+                        ),
+                        dmc.Checkbox(
+                            label=SolverType.HIGHS.label,
+                            value=f"{SolverType.HIGHS.value}",
+                            color=THEME_COLOR
+                        ),
+                    ],
                 ),
-                id="hybrid-select-wrapper",
-                className="" if SHOW_CQM else "display-none",
             ),
             html.Label("Solver Time Limit (seconds)", htmlFor="solver-time-limit"),
             dmc.NumberInput(

@@ -68,27 +68,22 @@ def toggle_left_column(collapse_trigger: int, to_collapse_class: str) -> tuple[s
 
 
 @dash.callback(
-    Output("hybrid-select-wrapper", "className"),
-    inputs=[
-        Input("solver-select", "value"),
-    ],
-    prevent_initial_call=True,
+    Output("hybrid-select", "style"),
+    Input("solver-select", "value"),
 )
-def update_solvers_selected(
-    selected_solvers: list[int],
-) -> str:
+def update_solvers_selected(selected_solvers: list[str]) -> dict:
     """Hide Stride/CQM selector when Hybrid is unselected. Not applicable when SHOW_CQM is False.
 
     Args:
-        selected_solvers (list[int]): Currently selected solvers.
+        selected_solvers (list[str]): Currently selected solvers.
 
     Returns:
-        str: Class name for hybrid select wrapper.
+        dict: Style for the hybrid select wrapper.
     """
-    if SHOW_CQM:
-        return "" if SolverType.HYBRID.value in selected_solvers else "display-none"
+    if SHOW_CQM and f"{SolverType.HYBRID.value}" in selected_solvers:
+        return {}
 
-    raise PreventUpdate
+    return {"display": "none"}
 
 
 @dash.callback(
@@ -137,8 +132,8 @@ def update_tab_loading_state(
     if ctx.triggered_id == "run-button" and run_click > 0:
         running = ("Loading...", True, "tab", True)
         return (
-            *(running if SolverType.HYBRID.value in solvers else [dash.no_update] * 4),
-            *(running if SolverType.HIGHS.value in solvers else [dash.no_update] * 4),
+            *(running if f"{SolverType.HYBRID.value}" in solvers else [dash.no_update] * 4),
+            *(running if f"{SolverType.HIGHS.value}" in solvers else [dash.no_update] * 4),
             {"display": "none"},
             {},
             "input-tab",
@@ -256,14 +251,14 @@ class RunOptimizationHybridReturn(NamedTuple):
     prevent_initial_call=True,
 )
 def run_optimization_hybrid(
-    run_click: int, solvers: list[int], hybrid_solver: int, scenario: str, time_limit: int
+    run_click: int, solvers: list[str], hybrid_solver: str, scenario: str, time_limit: int
 ) -> RunOptimizationHybridReturn:
     """Runs optimization using the D-Wave hybrid solver.
 
     Args:
         run_click (int): The number of times the run button has been clicked.
-        solvers (list[int]): The solvers that have been selected.
-        hybrid_solver (int): The hybrid solver that have been selected.
+        solvers (list[str]): The solvers that have been selected.
+        hybrid_solver (str): The hybrid solver that have been selected.
         scenario (str): The scenario to use for the optimization.
         time_limit (int): The time limit for the optimization.
 
@@ -282,7 +277,7 @@ def run_optimization_hybrid(
     if ctx.triggered_id != "run-button" or run_click == 0:
         raise PreventUpdate
 
-    if SolverType.HYBRID.value not in solvers:
+    if f"{SolverType.HYBRID.value}" not in solvers:
         return RunOptimizationHybridReturn(
             dwave_tab_class="tab",
             dwave_tab_label=DWAVE_TAB_LABEL,
@@ -294,7 +289,7 @@ def run_optimization_hybrid(
 
     model_data.load_from_file(DATA_PATH.joinpath(filename))
 
-    running_cqm = hybrid_solver is HybridSolverType.CQM.value
+    running_cqm = int(hybrid_solver) is HybridSolverType.CQM.value
 
     results = run_shop_scheduler(
         model_data,
@@ -351,14 +346,14 @@ class RunOptimizationScipyReturn(NamedTuple):
     prevent_initial_call=True,
 )
 def run_optimization_scipy(
-    run_click: int, solvers: list[int], scenario: str, time_limit: int
+    run_click: int, solvers: list[str], scenario: str, time_limit: int
 ) -> RunOptimizationScipyReturn:
     """Runs optimization using the HiGHS solver.
 
     Args:
         run_click (int): The number of times the run button has been
             clicked.
-        solvers (list[int]): The solvers that have been selected.
+        solvers (list[str]): The solvers that have been selected.
         scenario (str): The scenario to use for the optimization.
         time_limit (int): The time limit for the optimization.
 
@@ -377,7 +372,7 @@ def run_optimization_scipy(
     if ctx.triggered_id != "run-button" or run_click == 0:
         raise PreventUpdate
 
-    if SolverType.HIGHS.value not in solvers:
+    if f"{SolverType.HIGHS.value}" not in solvers:
         return RunOptimizationScipyReturn(
             highs_tab_class="tab",
             highs_tab_label=CLASSICAL_TAB_LABEL,
