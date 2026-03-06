@@ -4,11 +4,11 @@
 
 # Flow Shop Scheduling
 
-[Job shop scheduling](https://en.wikipedia.org/wiki/Job-shop_scheduling) (JSS)
+Job shop scheduling (JSS)
 is an optimization problem with the goal of scheduling jobs on a variety of machines,
 where jobs are processed on machines in different orders. The objective is to
 minimize the time it takes to complete all jobs, also known as the "makespan".
-[Flow shop scheduling](https://en.wikipedia.org/wiki/Flow-shop_scheduling) (FSS)
+Flow shop scheduling (FSS)
 is a constrained case of JSS where each job uses each machine in the same
 order. The machines in FSS problems can often be seen as sequential operations
 to be executed on each job, as is the case in this example.
@@ -16,21 +16,21 @@ to be executed on each job, as is the case in this example.
 This is a basic example of flow show scheduling that can easily be extended to different
 objectives, such as minimizing the delay for the scheduled completion of each job.
 
-![Demo Screenshot](_static/screenshot.png)
-
 This example demonstrates three ways of formulating and optimizing FSS:
 
 *   Formulating a
     [nonlinear model](https://docs.dwavequantum.com/en/latest/concepts/models.html#nonlinear-model)
-    and solving on a Leap&trade; hybrid nonlinear (NL) solver
+    and solving on the Stride&trade; hybrid solver
 *   Formulating a
     [constrained quadratic model](https://docs.dwavequantum.com/en/latest/concepts/models.html#constrained-quadratic-model)
-    (CQM) and solving on a Leap hybrid CQM solver
-*   Formulating a mixed-integer problem and solving on a classical mixed-integer
-    linear solver
+    (CQM) and solving on the CQM hybrid solver
+*   Formulating a constrained quadratic model (CQM) and solving it using SciPy's HiGHS solver.
 
 This example lets you run the scheduler from either the command line or a visual
 interface built with [Dash](https://dash.plotly.com/).
+
+![Demo Screenshot](static/demo.png "Image of demo interface")
+![Demo Screenshot](static/demo_solution.png "Image of demo interface with solution")
 
 ## Installation
 You can run this example without installation in cloud-based IDEs that support the
@@ -48,7 +48,7 @@ If you are cloning the repo to your local system, working in a
 
 ## Usage
 Your development environment should be configured to access the
-[Leap quantum cloud service](https://docs.dwavequantum.com/en/latest/ocean/sapi_access_basic.html).
+[Leap&trade; quantum cloud service](https://docs.dwavequantum.com/en/latest/ocean/sapi_access_basic.html).
 You can see information about supported IDEs and authorizing access to your Leap account
 [here](https://docs.dwavequantum.com/en/latest/ocean/leap_authorization.html).
 
@@ -89,7 +89,7 @@ The command line arguments are as follows:
   output/schedule.png)
 - -sp (--use_scipy_solver): use SciPy's HiGHS solver instead of a hybrid solver, overrides -cqm
   (default: False)
-- -cqm (--use_cqm_solver): use the CQM solver instead of the nonlinear solver
+- -cqm (--use_cqm_solver): use the CQM solver instead of the Stride solver
   (default: False)
 - -v (--verbose): print verbose output (default: True)
 - -p (--profile): profile variable to pass to the sampler (default: None)
@@ -129,12 +129,12 @@ The model sets the following objectives and constraints to achieve this goal:
 - **No-Overlap Constraints** ensure no two jobs can execute on the same machine at the same time.
 - **Makespan Constraint** (optional) puts an upper bound on the time it takes to complete all jobs.
 
-Constraints are handled differently in the CQM and NL model formulations. The CQM
+Constraints are handled differently in the CQM and Stride formulations. The CQM
 formulation must explicitly state each constraint and therefore searches a solution space
-that includes variable assignments that are infeasible (constraints are violated). The nonlinear
-model has no need for explicit constraints as the structure of the model limits potential
+that includes variable assignments that are infeasible (constraints are violated). The Stride solver
+has no need for explicit constraints as the structure of the model limits potential
 solutions to only those that adhere to the constraints. By using implicit constraints to limit
-the search space to only valid solutions, the NL solver is often able to find better solutions,
+the search space to only valid solutions, the Stride solver is often able to find better solutions,
 faster.
 
 ## CQM Model Overview
@@ -170,7 +170,7 @@ different jobs at the same time.
 Our first constraint, [equation 1](#eq2), enforces the precedence constraint.
 This ensures that all tasks of a job are executed in the given order.
 
-![equation1](_static/eq1.png)          (1)
+![equation1](static/eq1.png "Equation showing that the start of the next job must come after the previous job")          (1)
 
 This constraint ensures that a task for a given job, `j`, on a machine,
 `M_(j,t)`, starts when the previous task is finished. As an example, for
@@ -181,24 +181,23 @@ assuming that task 4 takes 12 hours to finish, we add this constraint:
 #### No-Overlap Constraints
 Our second constraint, [equation 2](#eq2), ensures that multiple jobs don't use
 any machine at the same time.
-![eq2](_static/eq2.png)          (2)
+![eq2](static/eq2.png "Equation preventing any two jobs on the same machine at the same time")          (2)
 
 Usually this constraint is modeled as two disjunctive linear constraints
 ([Ku et al. 2016](#Ku) and [Manne et al. 1960](#Manne)); however, it is more
 efficient to model this as a single quadratic inequality constraint. In
 addition, using this quadratic equation eliminates the need for using the so
-called `Big M` value to activate or relax constraint
-(https://en.wikipedia.org/wiki/Big_M_method).
+called [Big M](https://en.wikipedia.org/wiki/Big_M_method) value to activate or relax constraint.
 
-The proposed quadratic equation fulfills the same behaviour as the linear
+The proposed quadratic equation fulfills the same behavior as the linear
 constraints:
 
 There are two cases:
 
 - if `y_j,k,i = 0` job `j` is processed after job `k`:
-  ![equation2_1](_static/eq2_1.png)
+  ![equation2_1](static/eq2_1.png "Equation simplifying above equation preventing two jobs on the same machine at the same time")
 - if `y_j,k,i = 1` job `k` is processed after job `j`:
-  ![equation2_2](_static/eq2_2.png)
+  ![equation2_2](static/eq2_2.png "Equation simplifying above equation preventing two jobs on the same machine at the same time")
   Since these equations are applied to every pair of jobs, they guarantee that
   the jobs don't overlap on a machine.
 
@@ -208,8 +207,8 @@ will be determined using a greedy heuristic. Placing an upper bound on the
 makespan improves the performance of the sampler; however, if the upper
 bound is too low then the sampler may fail to find a feasible solution.
 
-## Nonlinear Model Overview
-The model for the nonlinear solver is constructed using the
+## Stride Model Overview
+The model for the Stride solver is constructed using the
 [flow shop scheduling generator](https://docs.dwavequantum.com/en/latest/ocean/api_ref_optimization/generators.html#dwave.optimization.generators.flow_shop_scheduling)
 provided in ``dwave-optimization``.
 
@@ -229,7 +228,7 @@ Typically, solver performance strongly depends on the size of the solution space
 problem: models with a smaller solution space tend to perform better than ones with a larger space
 as there are less potential solutions to search through to find optimality. A powerful way to reduce
 the solution space is by using variables that act as implicit constraints. Such a variable
-reduces the solution space to solutions that adhere to its implicit constraints. The NL solver
+reduces the solution space to solutions that adhere to its implicit constraints. The Stride solver
 has many variable types that allow for model construction to integrate constraints implicitly.
 In this problem example, both constraints are handled implicitly.
 
@@ -245,11 +244,11 @@ As can be seen in the two images below, switching the job order can
 improve the solution quality, corresponding to a shorter completion
 time (makespan).
 
-![fss_example0](_static/fss_example0.png)
+![fss_example0](static/fss_example0.png "A schedule showing an inefficient ordering of jobs")
 Above: a solution to a flow shop scheduling problem with 3 jobs on 3 machines.
 
-![fss_example1](_static/fss_example1.png)
-Above: an improved solution to the same problem with a permutated job order.
+![fss_example1](static/fss_example1.png "The same schedule as above but with the job order permuted which minimizing overall completion time")
+Above: an improved solution to the same problem with a permuted job order.
 
 #### No-Overlap Constraints
 The no-overlap constraint ensures that no two jobs use the same machine at the same time.
@@ -262,11 +261,6 @@ the solution space adhere to it.
 <a id="Manne"></a>
 A. S. Manne, On the job-shop scheduling problem, Operations Research , 1960,
 Pages 219-223.
-
-<a id="Ku"></a>
-Wen-Yang Ku, J. Christopher Beck, Mixed Integer Programming models for job
-shop scheduling: A computational analysis, Computers & Operations Research,
-Volume 73, 2016, Pages 165-173.
 
 ## License
 

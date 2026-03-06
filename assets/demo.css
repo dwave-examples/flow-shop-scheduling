@@ -1,0 +1,120 @@
+/*
+Copyright 2024 D-Wave
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+.gantt-title {
+    margin-bottom: 0.25rem;
+}
+
+#solver-select label {
+    margin: 0;
+    font-weight: 400;
+    display: flex;
+}
+
+.draglayer {
+    cursor: pointer !important;
+}
+
+.solution-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.gantt-chart-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+}
+
+.graph-wrapper,
+.graph,
+.dash-graph {
+    height: 100%;
+}
+
+.gantt-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    margin-right: 11rem;
+    margin-left: 3rem;
+}
+
+.tab-fail:where(:not([data-active])),
+.mantine-Tabs-tab:hover:where(:not([data-active])).tab-fail {
+    border-top-color: var(--red-light);
+    border-style: solid;
+}
+
+.tab-success:where(:not([data-active])),
+.mantine-Tabs-tab:hover:where(:not([data-active])).tab-success {
+    border-top-color: var(--teal-darker);
+    border-style: solid;
+}
+
+.tab-warning:where(:not([data-active])),
+.mantine-Tabs-tab:hover:where(:not([data-active])).tab-warning {
+    border-top-color: var(--orange);
+    border-style: solid;
+}
+
+.makespan {
+    margin-bottom: 0.25rem;
+}
+
+.button-small {
+    padding: 0.35rem 1rem;
+}
+
+.mantine-Checkbox-label {
+    font-size: 1rem;
+    font-weight: 400;
+    margin: 0;
+}
+
+.mantine-Radio-label {
+    font-size: 0.875rem;
+    font-weight: 400;
+    margin: 0;
+}
+
+#solver-select-label {
+    font-size: 1.125rem;
+    font-family: var(--font);
+    color: var(--blue-darkest);
+    margin: 1rem 0 0.5rem;
+    font-weight: 600;
+    display: block;
+}
+
+.mantine-Group-root {
+    display: block;
+}
+
+.mantine-RadioGroup-root .mantine-Group-root {
+    display: flex;
+}
+
+.mantine-Group-root > .mantine-Checkbox-root {
+    margin: 0 0 0.75rem 0.5rem;
+}
+
+.mantine-Group-root > .mantine-InputWrapper-root.mantine-RadioGroup-root {
+    margin: 0 0 1.25rem 2.5rem;
+}

@@ -16,13 +16,7 @@
 
 import json
 
-# THEME_COLOR is used for the button, text, and banner and should be dark
-# and pass accessibility checks with white: https://webaim.org/resources/contrastchecker/
-# THEME_COLOR_SECONDARY can be light or dark and is used for sliders, loading icon, and tabs
-THEME_COLOR = "#074C91"  # D-Wave dark blue default #074C91
-THEME_COLOR_SECONDARY = "#2A7DE1"  # D-Wave blue default #2A7DE1
-
-THUMBNAIL = "assets/dwave_logo.svg"
+THUMBNAIL = "static/dwave_logo.svg"
 
 APP_TITLE = "FSS Demo"
 MAIN_HEADER = "Flow Shop Scheduling"
@@ -33,7 +27,7 @@ on the right.
 """
 
 CLASSICAL_TAB_LABEL = "Classical Results"
-DWAVE_TAB_LABEL = "Quantum Hybrid Results"
+DWAVE_TAB_LABEL = "Hybrid Results"
 
 SHOW_CQM = True
 
