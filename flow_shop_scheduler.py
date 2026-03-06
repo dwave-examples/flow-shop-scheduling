@@ -26,9 +26,8 @@ import warnings
 
 import pandas as pd
 from dimod import Binary, ConstrainedQuadraticModel, Integer
-from dwave.system import LeapHybridCQMSampler, LeapHybridNLSampler
-
 from dwave.optimization.generators import flow_shop_scheduling
+from dwave.system import LeapHybridCQMSampler, LeapHybridNLSampler
 
 import src.utils.plot_schedule as job_plotter
 import src.utils.scipy_solver as scipy_solver
@@ -230,9 +229,7 @@ class JobShopSchedulingModel:
         if time_limit is not None:
             time_limit = max(min_time_limit, time_limit)
         raw_sampleset = sampler.sample_cqm(
-            self.cqm,
-            time_limit=time_limit,
-            label="Examples - Flow Shop Scheduling"
+            self.cqm, time_limit=time_limit, label="Examples - Flow Shop Scheduling"
         )
         feasible_sampleset = raw_sampleset.filter(lambda d: d.is_feasible)
         num_feasible = len(feasible_sampleset)
@@ -315,9 +312,7 @@ class JobShopSchedulingModel:
         """
         sampler = LeapHybridNLSampler()
         sampler.sample(
-            self.stride_model,
-            time_limit=time_limit,
-            label="Examples - Flow Shop Scheduling"
+            self.stride_model, time_limit=time_limit, label="Examples - Flow Shop Scheduling"
         )
 
         end_times = self._calculate_end_times()

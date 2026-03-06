@@ -13,10 +13,11 @@
 # limitations under the License.
 
 from __future__ import annotations
+
 from enum import EnumType
 
-from dash import dcc, html
 import dash_mantine_components as dmc
+from dash import dcc, html
 
 from demo_configs import (
     CLASSICAL_TAB_LABEL,
@@ -81,7 +82,7 @@ def generate_solution_tab(title: str, tab: str, index: int) -> dmc.TabsPanel:
     """
     return dmc.TabsPanel(
         value=f"{tab}-tab",
-        tabIndex=11+index,
+        tabIndex=11 + index,
         children=[
             html.Div(
                 className="solution-card",
@@ -92,16 +93,18 @@ def generate_solution_tab(title: str, tab: str, index: int) -> dmc.TabsPanel:
                             html.Div(
                                 className="gantt-heading",
                                 children=[
-                                    html.Div([
-                                        html.H2(
-                                            [title, html.Span(id=f"{tab}-gantt-title-span")],
-                                            className="gantt-title",
-                                        ),
-                                        html.H4([
-                                            "Makespan: ",
-                                            html.Span(id=f"{tab}-makespan")
-                                        ], className="makespan"),
-                                    ]),
+                                    html.Div(
+                                        [
+                                            html.H2(
+                                                [title, html.Span(id=f"{tab}-gantt-title-span")],
+                                                className="gantt-title",
+                                            ),
+                                            html.H4(
+                                                ["Makespan: ", html.Span(id=f"{tab}-makespan")],
+                                                className="makespan",
+                                            ),
+                                        ]
+                                    ),
                                     html.Button(
                                         id={"type": "gantt-heading-button", "index": index},
                                         className="button button-small",
@@ -125,10 +128,13 @@ def generate_solution_tab(title: str, tab: str, index: int) -> dmc.TabsPanel:
     )
 
 
-def generate_options(options: list | EnumType, str_val: bool=False) -> list[dict]:
+def generate_options(options: list | EnumType, str_val: bool = False) -> list[dict]:
     """Generates options for dropdowns, checklists, radios, etc."""
     if isinstance(options, EnumType):
-        return [{"label": option.label, "value": f"{option.value}" if str_val else option.value} for option in options]
+        return [
+            {"label": option.label, "value": f"{option.value}" if str_val else option.value}
+            for option in options
+        ]
 
     return [{"label": option, "value": f"{option}" if str_val else option} for option in options]
 
@@ -164,11 +170,8 @@ def generate_settings_form() -> html.Div:
                         dmc.RadioGroup(
                             children=dmc.Group(
                                 [
-                                    dmc.Radio(
-                                        s.label,
-                                        value=f"{s.value}",
-                                        color=THEME_COLOR
-                                    ) for s in HybridSolverType
+                                    dmc.Radio(s.label, value=f"{s.value}", color=THEME_COLOR)
+                                    for s in HybridSolverType
                                 ]
                             ),
                             id="hybrid-select",
@@ -180,7 +183,7 @@ def generate_settings_form() -> html.Div:
                         dmc.Checkbox(
                             label=SolverType.HIGHS.label,
                             value=f"{SolverType.HIGHS.value}",
-                            color=THEME_COLOR
+                            color=THEME_COLOR,
                         ),
                     ],
                 ),
@@ -359,12 +362,8 @@ def create_interface():
                                             ),
                                         ],
                                     ),
-                                    generate_solution_tab(
-                                        "Quantum Hybrid Solver", "dwave", 1
-                                    ),
-                                    generate_solution_tab(
-                                        "Classical Solver (HiGHS)", "highs", 2
-                                    ),
+                                    generate_solution_tab("Quantum Hybrid Solver", "dwave", 1),
+                                    generate_solution_tab("Classical Solver (HiGHS)", "highs", 2),
                                 ],
                             )
                         ],

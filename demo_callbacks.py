@@ -22,20 +22,14 @@ from dash import MATCH, ctx
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
-from demo_configs import (
-    CLASSICAL_TAB_LABEL,
-    DWAVE_TAB_LABEL,
-    SCENARIOS,
-    SHOW_CQM,
-)
-from src.generate_charts import generate_gantt_chart, get_empty_figure, get_minimum_task_times
+from demo_configs import CLASSICAL_TAB_LABEL, DWAVE_TAB_LABEL, SCENARIOS, SHOW_CQM
 from flow_shop_scheduler import run_shop_scheduler
-from src.model_data import FlowShopData
 from src.demo_enums import HybridSolverType, SolverType
+from src.generate_charts import generate_gantt_chart, get_empty_figure, get_minimum_task_times
+from src.model_data import FlowShopData
 
 BASE_PATH = pathlib.Path(__file__).parent.resolve()
 DATA_PATH = BASE_PATH.joinpath("input").resolve()
-
 
 
 @dash.callback(
@@ -279,9 +273,7 @@ def run_optimization_hybrid(
 
     if f"{SolverType.HYBRID.value}" not in solvers:
         return RunOptimizationHybridReturn(
-            dwave_tab_class="tab",
-            dwave_tab_label=DWAVE_TAB_LABEL,
-            running_dwave=False
+            dwave_tab_class="tab", dwave_tab_label=DWAVE_TAB_LABEL, running_dwave=False
         )
 
     model_data = FlowShopData()
@@ -304,7 +296,7 @@ def run_optimization_hybrid(
     return RunOptimizationHybridReturn(
         gantt_chart_jobsort=fig_jobsort,
         gantt_chart_startsort=fig_startsort,
-        dwave_makespan=int(results['Finish'].max()),
+        dwave_makespan=int(results["Finish"].max()),
         dwave_tab_disabled=False,
         dwave_gantt_title_span=" (CQM)" if running_cqm else " (Stride)",
         dwave_tab_class="tab-success",
@@ -374,9 +366,7 @@ def run_optimization_scipy(
 
     if f"{SolverType.HIGHS.value}" not in solvers:
         return RunOptimizationScipyReturn(
-            highs_tab_class="tab",
-            highs_tab_label=CLASSICAL_TAB_LABEL,
-            running_classical=False
+            highs_tab_class="tab", highs_tab_label=CLASSICAL_TAB_LABEL, running_classical=False
         )
 
     model_data = FlowShopData()
@@ -389,8 +379,8 @@ def run_optimization_scipy(
         use_scipy_solver=True,
         solver_time_limit=time_limit,
     )
-    
-    makespan = 0 if results.empty else int(results['Finish'].max())
+
+    makespan = 0 if results.empty else int(results["Finish"].max())
 
     if results.empty:
         fig = get_empty_figure("No solution found for Classical solver")
