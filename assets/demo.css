@@ -24,10 +24,6 @@ limitations under the License.
     display: flex;
 }
 
-#solver-select.hide-cqm label:first-child {
-    display: none !important;
-}
-
 .draglayer {
     cursor: pointer !important;
 }

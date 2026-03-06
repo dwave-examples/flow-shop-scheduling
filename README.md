@@ -16,7 +16,7 @@ to be executed on each job, as is the case in this example.
 This is a basic example of flow show scheduling that can easily be extended to different
 objectives, such as minimizing the delay for the scheduled completion of each job.
 
-![Demo Screenshot](static/screenshot.png)
+![Demo Screenshot](static/screenshot.png "Image of demo interface")
 
 This example demonstrates three ways of formulating and optimizing FSS:
 
@@ -26,8 +26,7 @@ This example demonstrates three ways of formulating and optimizing FSS:
 *   Formulating a
     [constrained quadratic model](https://docs.dwavequantum.com/en/latest/concepts/models.html#constrained-quadratic-model)
     (CQM) and solving on the CQM hybrid solver
-*   Formulating a mixed-integer problem and solving on a classical mixed-integer
-    linear solver
+*   Formulating a constrained quadratic model (CQM) and solving it using SciPy's HiGHS solver.
 
 This example lets you run the scheduler from either the command line or a visual
 interface built with [Dash](https://dash.plotly.com/).
@@ -89,7 +88,7 @@ The command line arguments are as follows:
   output/schedule.png)
 - -sp (--use_scipy_solver): use SciPy's HiGHS solver instead of a hybrid solver, overrides -cqm
   (default: False)
-- -cqm (--use_cqm_solver): use the CQM solver instead of the nonlinear solver
+- -cqm (--use_cqm_solver): use the CQM solver instead of the Stride solver
   (default: False)
 - -v (--verbose): print verbose output (default: True)
 - -p (--profile): profile variable to pass to the sampler (default: None)
@@ -131,8 +130,8 @@ The model sets the following objectives and constraints to achieve this goal:
 
 Constraints are handled differently in the CQM and Stride formulations. The CQM
 formulation must explicitly state each constraint and therefore searches a solution space
-that includes variable assignments that are infeasible (constraints are violated). The nonlinear
-model has no need for explicit constraints as the structure of the model limits potential
+that includes variable assignments that are infeasible (constraints are violated). The Stride solver
+has no need for explicit constraints as the structure of the model limits potential
 solutions to only those that adhere to the constraints. By using implicit constraints to limit
 the search space to only valid solutions, the Stride solver is often able to find better solutions,
 faster.
@@ -170,7 +169,7 @@ different jobs at the same time.
 Our first constraint, [equation 1](#eq2), enforces the precedence constraint.
 This ensures that all tasks of a job are executed in the given order.
 
-![equation1](static/eq1.png)          (1)
+![equation1](static/eq1.png "Equation showing that the start of the next job must come after the previous job")          (1)
 
 This constraint ensures that a task for a given job, `j`, on a machine,
 `M_(j,t)`, starts when the previous task is finished. As an example, for
@@ -181,14 +180,13 @@ assuming that task 4 takes 12 hours to finish, we add this constraint:
 #### No-Overlap Constraints
 Our second constraint, [equation 2](#eq2), ensures that multiple jobs don't use
 any machine at the same time.
-![eq2](static/eq2.png)          (2)
+![eq2](static/eq2.png "Equation preventing any two jobs on the same machine at the same time")          (2)
 
 Usually this constraint is modeled as two disjunctive linear constraints
 ([Ku et al. 2016](#Ku) and [Manne et al. 1960](#Manne)); however, it is more
 efficient to model this as a single quadratic inequality constraint. In
 addition, using this quadratic equation eliminates the need for using the so
-called `Big M` value to activate or relax constraint
-(https://en.wikipedia.org/wiki/Big_M_method).
+called [Big M](https://en.wikipedia.org/wiki/Big_M_method) value to activate or relax constraint.
 
 The proposed quadratic equation fulfills the same behavior as the linear
 constraints:
@@ -196,9 +194,9 @@ constraints:
 There are two cases:
 
 - if `y_j,k,i = 0` job `j` is processed after job `k`:
-  ![equation2_1](static/eq2_1.png)
+  ![equation2_1](static/eq2_1.png "Equation simplifying above equation preventing two jobs on the same machine at the same time")
 - if `y_j,k,i = 1` job `k` is processed after job `j`:
-  ![equation2_2](static/eq2_2.png)
+  ![equation2_2](static/eq2_2.png "Equation simplifying above equation preventing two jobs on the same machine at the same time")
   Since these equations are applied to every pair of jobs, they guarantee that
   the jobs don't overlap on a machine.
 
@@ -208,8 +206,8 @@ will be determined using a greedy heuristic. Placing an upper bound on the
 makespan improves the performance of the sampler; however, if the upper
 bound is too low then the sampler may fail to find a feasible solution.
 
-## Nonlinear Model Overview
-The model for the nonlinear solver is constructed using the
+## Stride Model Overview
+The model for the Stride solver is constructed using the
 [flow shop scheduling generator](https://docs.dwavequantum.com/en/latest/ocean/api_ref_optimization/generators.html#dwave.optimization.generators.flow_shop_scheduling)
 provided in ``dwave-optimization``.
 
@@ -245,10 +243,10 @@ As can be seen in the two images below, switching the job order can
 improve the solution quality, corresponding to a shorter completion
 time (makespan).
 
-![fss_example0](static/fss_example0.png)
+![fss_example0](static/fss_example0.png "A schedule showing an inefficient ordering of jobs")
 Above: a solution to a flow shop scheduling problem with 3 jobs on 3 machines.
 
-![fss_example1](static/fss_example1.png)
+![fss_example1](static/fss_example1.png "The same schedule as above but with the job order permuted which minimizing overall completion time")
 Above: an improved solution to the same problem with a permuted job order.
 
 #### No-Overlap Constraints
@@ -262,11 +260,6 @@ the solution space adhere to it.
 <a id="Manne"></a>
 A. S. Manne, On the job-shop scheduling problem, Operations Research , 1960,
 Pages 219-223.
-
-<a id="Ku"></a>
-Wen-Yang Ku, J. Christopher Beck, Mixed Integer Programming models for job
-shop scheduling: A computational analysis, Computers & Operations Research,
-Volume 73, 2016, Pages 165-173.
 
 ## License
 
