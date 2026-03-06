@@ -16,8 +16,6 @@ to be executed on each job, as is the case in this example.
 This is a basic example of flow show scheduling that can easily be extended to different
 objectives, such as minimizing the delay for the scheduled completion of each job.
 
-![Demo Screenshot](static/screenshot.png "Image of demo interface")
-
 This example demonstrates three ways of formulating and optimizing FSS:
 
 *   Formulating a
@@ -30,6 +28,9 @@ This example demonstrates three ways of formulating and optimizing FSS:
 
 This example lets you run the scheduler from either the command line or a visual
 interface built with [Dash](https://dash.plotly.com/).
+
+![Demo Screenshot](static/demo.png "Image of demo interface")
+![Demo Screenshot](static/demo_solution.png "Image of demo interface with solution")
 
 ## Installation
 You can run this example without installation in cloud-based IDEs that support the
